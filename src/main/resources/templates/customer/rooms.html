@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Tìm phòng</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .room-results-box {
+            max-height: 640px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            background: white;
+        }
+        .room-row {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        .room-row:last-child {
+            border-bottom: none;
+        }
+        .room-row[data-detail-url] {
+            cursor: pointer;
+        }
+        .room-row[data-detail-url]:hover {
+            background: #f8f9fa;
+        }
+        .room-row img, .room-row .no-image {
+            width: 220px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 0.375rem;
+            flex-shrink: 0;
+        }
+        .no-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f1f1;
+            color: #888;
+        }
+    </style>
+</head>
+<body th:style="'background-color: #f8f9fa; background-image: url(' + @{/page-images/timphong.jpg} + '); background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat; min-height: 100vh; display: flex; flex-direction: column;'">
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="container py-5 flex-grow-1">
+    <h3 class="fw-bold mb-4">Tìm phòng</h3>
+
+    <div class="bg-white p-4 rounded shadow-sm mb-4">
+        <form th:action="@{/customer/rooms}" method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Ngày nhận phòng</label>
+                <input type="date" name="checkIn" class="form-control" th:value="${checkIn}" th:min="${today}" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Ngày trả phòng</label>
+                <input type="date" name="checkOut" class="form-control" th:value="${checkOut}" th:min="${today}" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Số khách</label>
+                <input type="number" name="guests" min="1" class="form-control" th:value="${guests}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Loại phòng</label>
+                <select name="roomTypeId" class="form-select">
+                    <option value="">Tất cả</option>
+                    <option th:each="rt : ${roomTypes}" th:value="${rt.id}" th:text="${rt.name}"
+                            th:selected="${rt.id == roomTypeId}"></option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Tìm phòng</button>
+            </div>
+        </form>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div th:if="${searched and rooms != null and #lists.isEmpty(rooms)}" class="alert alert-info">
+        Không tìm thấy phòng trống phù hợp với ngày và tiêu chí bạn chọn.
+    </div>
+
+    <div class="row g-4" th:if="${rooms != null and not #lists.isEmpty(rooms)}">
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted" th:text="'Tìm thấy ' + ${#lists.size(rooms)} + ' phòng'"></span>
+                <select id="sortSelect" class="form-select form-select-sm" style="width: auto;">
+                    <option value="default">Sắp xếp theo</option>
+                    <option value="price-asc">Giá tăng dần</option>
+                    <option value="price-desc">Giá giảm dần</option>
+                </select>
+            </div>
+
+            <div class="room-results-box" id="roomResultsBox">
+                <div class="room-row" th:each="room : ${rooms}"
+                     th:attr="data-price=${room.price},data-detail-url=@{/customer/rooms/{id}(id=${room.id}, checkIn=${checkIn}, checkOut=${checkOut}, guests=${guests})}">
+                    <img th:if="${room.coverImageUrl}" th:src="${room.coverImageUrl}" alt="Ảnh phòng">
+                    <div th:unless="${room.coverImageUrl}" class="no-image">Chưa có ảnh</div>
+
+                    <div class="flex-grow-1">
+                        <h5 class="fw-bold mb-1" th:text="'Phòng ' + ${room.roomNumber}"></h5>
+                        <p class="text-muted mb-1" th:text="${room.roomType.name} + ' - tối đa ' + ${room.roomType.maxGuests} + ' người'"></p>
+                        <p class="text-muted mb-2" th:if="${room.roomType.amenities}" th:text="'Tiện ích: ' + ${room.roomType.amenities}"></p>
+                        <p class="fw-bold text-primary mb-2" th:text="${#numbers.formatDecimal(room.price, 1, 0)} + 'VND / đêm'"></p>
+                        <a th:href="@{/customer/rooms/{id}(id=${room.id}, checkIn=${checkIn}, checkOut=${checkOut}, guests=${guests})}"
+                           class="btn btn-primary btn-sm">Xem chi tiết</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="bg-white p-3 rounded shadow-sm">
+                <h6 class="fw-bold mb-3">Tìm theo giá</h6>
+                <div class="form-check">
+                    <input class="form-check-input price-filter" type="radio" name="priceRange" value="0-0" id="priceAll" checked>
+                    <label class="form-check-label" for="priceAll">Tất cả</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input price-filter" type="radio" name="priceRange" value="100000-200000" id="price1">
+                    <label class="form-check-label" for="price1">100.000 - 200.000 VND</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input price-filter" type="radio" name="priceRange" value="250000-400000" id="price2">
+                    <label class="form-check-label" for="price2">250.000 - 400.000 VND</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input price-filter" type="radio" name="priceRange" value="450000-700000" id="price3">
+                    <label class="form-check-label" for="price3">450.000 - 700.000 VND</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input price-filter" type="radio" name="priceRange" value="750000-1200000" id="price4">
+                    <label class="form-check-label" for="price4">750.000 - 1.200.000 VND</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input price-filter" type="radio" name="priceRange" value="1300000-999999999" id="price5">
+                    <label class="form-check-label" for="price5">Từ 1.300.000 VND</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script th:inline="javascript">
+    const box = document.getElementById('roomResultsBox');
+
+    // Loc theo khoang gia (chi loc tren ket qua da tim duoc, khong goi lai server)
+    document.querySelectorAll('.price-filter').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            if (!box) return;
+            const parts = this.value.split('-').map(Number);
+            const min = parts[0];
+            const max = parts[1];
+            box.querySelectorAll('.room-row').forEach(function (row) {
+                const price = Number(row.getAttribute('data-price'));
+                if (min === 0 && max === 0) {
+                    row.style.display = '';
+                } else if (price >= min && price <= max) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Sap xep theo gia
+    const sortSelect = document.getElementById('sortSelect');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function () {
+            if (!box) return;
+            const rows = Array.from(box.querySelectorAll('.room-row'));
+            if (this.value === 'price-asc') {
+                rows.sort((a, b) => Number(a.getAttribute('data-price')) - Number(b.getAttribute('data-price')));
+            } else if (this.value === 'price-desc') {
+                rows.sort((a, b) => Number(b.getAttribute('data-price')) - Number(a.getAttribute('data-price')));
+            }
+            rows.forEach(row => box.appendChild(row));
+        });
+    }
+
+    // Bam vao bat ky vi tri nao tren mot phong de xem chi tiet.
+    document.querySelectorAll('.room-row[data-detail-url]').forEach(function (row) {
+        row.addEventListener('click', function (event) {
+            if (event.target.closest('a, button, input, select, label')) return;
+            window.location.href = row.dataset.detailUrl;
+        });
+    });
+</script>
+
+<div th:replace="~{fragments/chatbot-widget :: widget}"></div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>

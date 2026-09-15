@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Danh sách phòng</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .room-card { cursor: pointer; }
+    </style>
+</head>
+<body th:style="'background-color: #f8f9fa; background-image: url(' + @{/page-images/danhsachphong.jpg} + '); background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat; min-height: 100vh; display: flex; flex-direction: column;'">
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="container py-5 flex-grow-1">
+    <h3 class="fw-bold mb-4">Danh sách phòng</h3>
+
+    <div class="row g-4">
+        <div class="col-md-9">
+            <div class="bg-white p-3 rounded shadow-sm mb-4">
+                <form th:action="@{/rooms}" method="get" class="d-flex gap-2 align-items-end">
+                    <div>
+                        <label class="form-label mb-1">Loại phòng</label>
+                        <select name="roomTypeId" class="form-select" onchange="this.form.submit()">
+                            <option value="">Tất cả</option>
+                            <option th:each="rt : ${roomTypes}" th:value="${rt.id}" th:text="${rt.name}"
+                                    th:selected="${rt.id == roomTypeId}"></option>
+                        </select>
+                    </div>
+                    <a th:if="${roomTypeId != null}" th:href="@{/rooms}" class="btn btn-outline-secondary">Bỏ lọc</a>
+                </form>
+            </div>
+
+            <div th:if="${#lists.isEmpty(rooms)}" class="alert alert-info">
+                Không có phòng nào phù hợp.
+            </div>
+
+            <div class="row g-4" id="roomsGrid">
+                <div class="col-md-4" th:each="room : ${rooms}" th:attr="data-price=${room.price}">
+                    <div class="card h-100 room-card" th:attr="data-detail-url=@{/customer/rooms/{id}(id=${room.id})}">
+                        <img th:if="${room.coverImageUrl}" th:src="${room.coverImageUrl}" class="card-img-top" style="height: 180px; object-fit: cover;" alt="Ảnh phòng">
+                        <div class="card-body">
+                            <h5 class="card-title" th:text="'Phòng ' + ${room.roomNumber}"></h5>
+                            <p class="card-text text-muted" th:text="${room.roomType.name}"></p>
+                            <p class="card-text fw-bold" th:text="${#numbers.formatDecimal(room.price, 1, 0)} + 'VND / đêm'"></p>
+                            <span class="badge bg-secondary mb-2" th:text="${room.status.vietnameseLabel}"></span>
+                            <a th:href="@{/customer/rooms/{id}(id=${room.id})}" class="btn btn-primary btn-sm w-100">Xem chi tiết &amp; đặt phòng</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="bg-white p-3 rounded shadow-sm">
+                <h6 class="fw-bold mb-3">Tìm theo giá</h6>
+                <div class="form-check">
+                    <input class="form-check-input price-filter" type="radio" name="priceRange" value="0-0" id="priceAll" checked>
+                    <label class="form-check-label" for="priceAll">Tất cả</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input price-filter" type="radio" name="priceRange" value="100000-200000" id="price1">
+                    <label class="form-check-label" for="price1">100.000 - 200.000 VND</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input price-filter" type="radio" name="priceRange" value="250000-400000" id="price2">
+                    <label class="form-check-label" for="price2">250.000 - 400.000 VND</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input price-filter" type="radio" name="priceRange" value="450000-700000" id="price3">
+                    <label class="form-check-label" for="price3">450.000 - 700.000 VND</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input price-filter" type="radio" name="priceRange" value="750000-1200000" id="price4">
+                    <label class="form-check-label" for="price4">750.000 - 1.200.000 VND</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input price-filter" type="radio" name="priceRange" value="1300000-999999999" id="price5">
+                    <label class="form-check-label" for="price5">Từ 1.300.000 VND</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Bam vao bat ky cho nao tren the phong (tru nut) de xem chi tiet
+    document.querySelectorAll('.room-card[data-detail-url]').forEach(function (card) {
+        card.addEventListener('click', function (event) {
+            if (event.target.closest('a, button')) return;
+            window.location.href = card.getAttribute('data-detail-url');
+        });
+    });
+
+    // Loc theo khoang gia ngay tren trinh duyet, khong can goi lai server
+    document.querySelectorAll('.price-filter').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            const parts = this.value.split('-').map(Number);
+            const min = parts[0];
+            const max = parts[1];
+            document.querySelectorAll('#roomsGrid > [data-price]').forEach(function (col) {
+                const price = Number(col.getAttribute('data-price'));
+                const match = (min === 0 && max === 0) || (price >= min && price <= max);
+                col.style.display = match ? '' : 'none';
+            });
+        });
+    });
+</script>
+
+<div th:replace="~{fragments/chatbot-widget :: widget}"></div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>

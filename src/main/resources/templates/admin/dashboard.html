@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Trang quản trị Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="container py-5">
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div th:replace="~{fragments/admin-sidebar :: sidebar}"></div>
+        </div>
+        <div class="col-md-9">
+            <h3 class="fw-bold mb-4">Tổng quan hệ thống</h3>
+            <p class="text-muted" sec:authorize="hasRole('ADMIN')">Đăng nhập thành công với quyền Quản trị viên. Bạn có thể quản lý loại phòng, phòng, combo và mã giảm giá ở menu bên trái.</p>
+            <p class="text-muted" sec:authorize="hasRole('STAFF') and not hasRole('ADMIN')">Đăng nhập thành công với quyền Nhân viên. Bạn có đầy đủ quyền quản lý như quản trị viên, ngoại trừ quản lý tài khoản nhân viên.</p>
+
+            <div class="row g-3 mt-2">
+                <div class="col-md-4">
+                    <div class="bg-white p-3 rounded shadow-sm text-center">
+                        <div class="text-muted small">Tổng số phòng</div>
+                        <div class="fs-3 fw-bold" th:text="${totalRooms}"></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="bg-white p-3 rounded shadow-sm text-center">
+                        <div class="text-muted small">Phòng còn trống</div>
+                        <div class="fs-3 fw-bold text-success" th:text="${availableRooms}"></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="bg-white p-3 rounded shadow-sm text-center">
+                        <div class="text-muted small">Phòng đang sử dụng</div>
+                        <div class="fs-3 fw-bold" th:text="${occupiedRooms}"></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="bg-white p-3 rounded shadow-sm text-center">
+                        <div class="text-muted small">Chưa sẵn sàng (chờ dọn dẹp)</div>
+                        <div class="fs-3 fw-bold text-warning" th:text="${notReadyRooms}"></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="bg-white p-3 rounded shadow-sm text-center">
+                        <div class="text-muted small">Đang bảo trì</div>
+                        <div class="fs-3 fw-bold text-danger" th:text="${maintenanceRooms}"></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="bg-white p-3 rounded shadow-sm text-center">
+                        <div class="text-muted small">Đơn chờ xác nhận</div>
+                        <div class="fs-3 fw-bold text-primary" th:text="${pendingBookings}"></div>
+                    </div>
+                </div>
+            </div>
+
+            <form method="get" th:action="@{/admin/dashboard}" class="d-flex flex-wrap align-items-end gap-2 bg-white p-3 rounded shadow-sm mt-4">
+                <div>
+                    <label class="form-label small text-muted mb-1" for="fromDate">Từ ngày</label>
+                    <input type="date" id="fromDate" name="fromDate" class="form-control form-control-sm" th:value="${fromDate}">
+                </div>
+                <div>
+                    <label class="form-label small text-muted mb-1" for="toDate">Đến ngày</label>
+                    <input type="date" id="toDate" name="toDate" class="form-control form-control-sm" th:value="${toDate}">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Xem thống kê</button>
+            </form>
+
+            <div class="row g-3 mt-2">
+                <div class="col-md-4">
+                    <div class="bg-white p-3 rounded shadow-sm">
+                        <div class="fw-semibold mb-2">Tỷ lệ đơn theo trạng thái</div>
+                        <canvas id="statusPieChart" height="220"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="bg-white p-3 rounded shadow-sm">
+                        <div class="fw-semibold mb-2">Doanh thu theo loại phòng</div>
+                        <canvas id="roomTypeBarChart" height="220"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="bg-white p-3 rounded shadow-sm">
+                        <div class="fw-semibold mb-2">Doanh thu theo thời gian</div>
+                        <canvas id="trendLineChart" height="220"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const bookingStatusLabels = /*[[${bookingStatusLabels}]]*/ [];
+    const bookingStatusData = /*[[${bookingStatusData}]]*/ [];
+    const roomTypeLabels = /*[[${roomTypeLabels}]]*/ [];
+    const roomTypeRevenueData = /*[[${roomTypeRevenueData}]]*/ [];
+    const trendLabels = /*[[${trendLabels}]]*/ [];
+    const trendData = /*[[${trendData}]]*/ [];
+    /*]]>*/
+
+    new Chart(document.getElementById('statusPieChart'), {
+        type: 'pie',
+        data: {
+            labels: bookingStatusLabels,
+            datasets: [{
+                data: bookingStatusData,
+                backgroundColor: ['#ffc107', '#0dcaf0', '#198754', '#6c757d', '#dc3545']
+            }]
+        },
+        options: {
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    new Chart(document.getElementById('roomTypeBarChart'), {
+        type: 'bar',
+        data: {
+            labels: roomTypeLabels,
+            datasets: [{
+                label: 'Doanh thu (VNĐ)',
+                data: roomTypeRevenueData,
+                backgroundColor: '#0d6efd'
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    new Chart(document.getElementById('trendLineChart'), {
+        type: 'line',
+        data: {
+            labels: trendLabels,
+            datasets: [{
+                label: 'Doanh thu (VNĐ)',
+                data: trendData,
+                borderColor: '#198754',
+                backgroundColor: 'rgba(25, 135, 84, 0.15)',
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+</script>
+
+</body>
+</html>

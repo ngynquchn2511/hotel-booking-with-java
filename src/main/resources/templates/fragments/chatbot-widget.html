@@ -1,0 +1,290 @@
+<div th:fragment="widget" xmlns:th="http://www.thymeleaf.org">
+    <style>
+        #chatbotBubble {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 1080;
+            background: #0d6efd;
+            color: #fff;
+            border-radius: 999px;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 6px 18px rgba(0,0,0,.25);
+            cursor: pointer;
+            font-weight: 600;
+            user-select: none;
+            border: none;
+        }
+        #chatbotBubble:hover { background: #0b5ed7; }
+        #chatbotPanel {
+            position: fixed;
+            right: 20px;
+            bottom: 84px;
+            z-index: 1080;
+            width: 320px;
+            max-width: calc(100vw - 40px);
+            height: 420px;
+            max-height: calc(100vh - 140px);
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,.3);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #chatbotPanel.chatbot-open { display: flex; }
+        .chatbot-panel-header {
+            background: #0d6efd;
+            color: #fff;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .chatbot-panel-header button {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+        }
+        #chatbotMessages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #f8f9fa;
+        }
+        .chatbot-msg {
+            max-width: 85%;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: .85rem;
+            white-space: pre-line;
+        }
+        .chatbot-msg-bot {
+            background: #e9ecef;
+            color: #212529;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+        .chatbot-msg-user {
+            background: #0d6efd;
+            color: #fff;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+        #chatbotForm {
+            display: flex;
+            border-top: 1px solid #dee2e6;
+            flex-shrink: 0;
+        }
+        #chatbotInput {
+            flex: 1;
+            border: none;
+            padding: 10px 12px;
+            outline: none;
+            font-size: .85rem;
+        }
+        #chatbotForm button {
+            border: none;
+            background: #0d6efd;
+            color: #fff;
+            padding: 0 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        #chatbotSuggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-self: flex-start;
+            max-width: 100%;
+        }
+        .chatbot-suggestion-btn {
+            background: #fff;
+            color: #0d6efd;
+            border: 1px solid #0d6efd;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: .78rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .chatbot-suggestion-btn:hover {
+            background: #0d6efd;
+            color: #fff;
+        }
+    </style>
+
+    <input type="hidden" id="chatbotCsrfToken" th:value="${_csrf != null ? _csrf.token : ''}">
+    <input type="hidden" id="chatbotCsrfHeader" th:value="${_csrf != null ? _csrf.headerName : ''}">
+
+    <button type="button" id="chatbotBubble">
+        <span>💬</span>
+        <span>Chat với tôi</span>
+    </button>
+
+    <div id="chatbotPanel">
+        <div class="chatbot-panel-header">
+            <span>Tư vấn đặt phòng</span>
+            <button type="button" id="chatbotClose">&times;</button>
+        </div>
+        <div id="chatbotMessages"></div>
+        <form id="chatbotForm">
+            <input type="text" id="chatbotInput" placeholder="Nhập câu hỏi..." autocomplete="off">
+            <button type="submit">Gửi</button>
+        </form>
+    </div>
+
+    <script th:inline="javascript">
+        (function () {
+            var bubble = document.getElementById('chatbotBubble');
+            var panel = document.getElementById('chatbotPanel');
+            var closeBtn = document.getElementById('chatbotClose');
+            var form = document.getElementById('chatbotForm');
+            var input = document.getElementById('chatbotInput');
+            var messages = document.getElementById('chatbotMessages');
+            var csrfToken = document.getElementById('chatbotCsrfToken').value;
+            var csrfHeader = document.getElementById('chatbotCsrfHeader').value;
+
+            var quickReplies = ['Địa chỉ ở đâu', 'Giá phòng thế nào', 'Có ưu đãi gì cho người mới không'];
+
+            // Cau hoi lien quan de goi y tiep theo sau khi bot vua tra loi 1 cau - moi cau chi xuat hien 1 lan
+            var suggestionTopics = {
+                'Địa chỉ ở đâu': ['Số điện thoại liên hệ là gì', 'Giờ nhận trả phòng thế nào', 'Giá phòng thế nào'],
+                'Giá phòng thế nào': ['Phòng còn trống ngày nào', 'Khách sạn có combo ăn uống không', 'Có ưu đãi gì cho người mới không'],
+                'Có ưu đãi gì cho người mới không': ['Có cần đặt cọc không', 'Hình thức thanh toán là gì', 'Giá phòng thế nào'],
+                'Phòng còn trống ngày nào': ['Khách sạn có combo ăn uống không', 'Khách sạn có tiện ích gì', 'Giá phòng thế nào'],
+                'Khách sạn có combo ăn uống không': ['Khách sạn có tiện ích gì', 'Giá phòng thế nào', 'Có ưu đãi gì cho người mới không'],
+                'Có cần đặt cọc không': ['Hình thức thanh toán là gì', 'Có ưu đãi gì cho người mới không', 'Địa chỉ ở đâu'],
+                'Hình thức thanh toán là gì': ['Có ưu đãi gì cho người mới không', 'Có cần đặt cọc không', 'Địa chỉ ở đâu'],
+                'Giờ nhận trả phòng thế nào': ['Địa chỉ ở đâu', 'Số điện thoại liên hệ là gì', 'Giá phòng thế nào'],
+                'Số điện thoại liên hệ là gì': ['Giờ nhận trả phòng thế nào', 'Địa chỉ ở đâu', 'Giá phòng thế nào'],
+                'Khách sạn có tiện ích gì': ['Khách sạn có combo ăn uống không', 'Phòng còn trống ngày nào', 'Giá phòng thế nào']
+            };
+            var SUGGESTIONS_PER_BATCH = 3;
+            var MAX_SUGGESTION_ROUNDS = 5;
+            var suggestionRounds = 0;
+            var shownSuggestions = {};
+            var currentSuggestionWrap = null;
+
+            function appendMessage(text, sender) {
+                var row = document.createElement('div');
+                row.className = 'chatbot-msg chatbot-msg-' + sender;
+                row.textContent = text;
+                messages.appendChild(row);
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            function removeSuggestions() {
+                if (currentSuggestionWrap) {
+                    currentSuggestionWrap.remove();
+                    currentSuggestionWrap = null;
+                }
+            }
+
+            // Lay toi da "count" cau hoi lien quan chua tung duoc goi y truoc do
+            function pickFollowUps(text, count) {
+                var candidates = suggestionTopics[text] || [];
+                var result = [];
+                for (var i = 0; i < candidates.length && result.length < count; i++) {
+                    if (!shownSuggestions[candidates[i]]) {
+                        result.push(candidates[i]);
+                    }
+                }
+                return result;
+            }
+
+            function createSuggestionButton(text) {
+                shownSuggestions[text] = true;
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'chatbot-suggestion-btn';
+                btn.textContent = text;
+                btn.addEventListener('click', function () {
+                    removeSuggestions();
+                    sendMessage(text);
+                });
+                return btn;
+            }
+
+            // Hien 1 bo cau hoi goi y ngay sau doan bot vua tra loi
+            function appendSuggestionBatch(topics) {
+                removeSuggestions();
+                if (!topics.length) {
+                    return;
+                }
+                var wrap = document.createElement('div');
+                wrap.id = 'chatbotSuggestions';
+                topics.forEach(function (text) {
+                    wrap.appendChild(createSuggestionButton(text));
+                });
+                messages.appendChild(wrap);
+                currentSuggestionWrap = wrap;
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            function sendMessage(text) {
+                appendMessage(text, 'user');
+
+                var headers = { 'Content-Type': 'application/json' };
+                if (csrfHeader) {
+                    headers[csrfHeader] = csrfToken;
+                }
+
+                fetch('/api/chatbot/ask', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ message: text })
+                }).then(function (res) {
+                    return res.json();
+                }).then(function (data) {
+                    appendMessage(data.reply, 'bot');
+                    if (suggestionRounds < MAX_SUGGESTION_ROUNDS) {
+                        var followUps = pickFollowUps(text, SUGGESTIONS_PER_BATCH);
+                        if (followUps.length) {
+                            suggestionRounds++;
+                            appendSuggestionBatch(followUps);
+                        }
+                    }
+                }).catch(function () {
+                    appendMessage('Xin lỗi, hiện không thể kết nối. Vui lòng thử lại sau.', 'bot');
+                });
+            }
+
+            bubble.addEventListener('click', function () {
+                var opening = !panel.classList.contains('chatbot-open');
+                panel.classList.toggle('chatbot-open');
+                if (opening && messages.children.length === 0) {
+                    appendMessage('Tôi có thể giúp gì cho bạn?', 'bot');
+                    appendSuggestionBatch(quickReplies);
+                }
+            });
+
+            closeBtn.addEventListener('click', function () {
+                panel.classList.remove('chatbot-open');
+            });
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var text = input.value.trim();
+                if (!text) {
+                    return;
+                }
+                input.value = '';
+                removeSuggestions();
+                sendMessage(text);
+            });
+        })();
+    </script>
+</div>

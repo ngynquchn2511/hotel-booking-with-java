@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Chi tiết đặt phòng</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body th:style="'background-color: #f8f9fa; background-image: url(' + @{/page-images/datphongthanhcong.jpg} + '); background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat; min-height: 100vh; display: flex; flex-direction: column;'">
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="container py-5 flex-grow-1" style="max-width: 720px;">
+    <div class="alert alert-success fw-bold" th:if="${booking.status.name() == 'PENDING'}">
+        Đặt phòng thành công! Đơn của bạn đang chờ nhân viên xác nhận.
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div class="bg-white p-4 rounded shadow-sm mb-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <h4 class="fw-bold m-0" th:text="'Đơn đặt phòng #' + ${booking.id}"></h4>
+            <span class="badge bg-secondary" th:text="${booking.status.vietnameseLabel}"></span>
+        </div>
+
+        <h6 class="fw-bold mt-3">Thông tin người nhận phòng</h6>
+        <p class="mb-1" th:if="${booking.guestName != null}">Họ tên: <span th:text="${booking.guestName}"></span></p>
+        <p class="mb-1" th:if="${booking.guestEmail != null}">Email: <span th:text="${booking.guestEmail}"></span></p>
+        <p class="mb-1" th:if="${booking.guestPhone != null}">Số điện thoại: <span th:text="${booking.guestPhone}"></span></p>
+
+        <h6 class="fw-bold mt-3">Thông tin phòng</h6>
+        <p class="mb-1" th:text="'Phòng ' + ${booking.room.roomNumber} + ' - ' + ${booking.room.roomType.name}"></p>
+
+        <h6 class="fw-bold mt-3">Thời gian</h6>
+        <p class="mb-1">Ngày nhận phòng: <span th:text="${booking.checkInDate}"></span> — Giờ nhận: <span th:text="${booking.checkInTime}"></span></p>
+        <p class="mb-1">Ngày trả phòng: <span th:text="${booking.checkOutDate}"></span> — Giờ trả: <span th:text="${booking.checkOutTime}"></span></p>
+        <p class="mb-1" th:if="${booking.numberOfGuests != null}">Số khách: <span th:text="${booking.numberOfGuests}"></span></p>
+
+        <h6 class="fw-bold mt-3" th:if="${booking.combo != null}">Combo dịch vụ</h6>
+        <p class="mb-1" th:if="${booking.combo != null}" th:text="${booking.combo.name}"></p>
+
+        <h6 class="fw-bold mt-3">Thanh toán</h6>
+        <p class="mb-1" th:if="${booking.discountCode != null}">
+            Mã giảm giá: <span th:text="${booking.discountCode.code}"></span>
+            (giảm <span th:text="${#numbers.formatDecimal(booking.discountAmount, 1, 0)} + 'VND'"></span>)
+        </p>
+        <p class="fw-bold fs-5 mb-0">Tổng tiền: <span th:text="${#numbers.formatDecimal(booking.totalAmount, 1, 0)} + 'VND'"></span></p>
+
+        <a th:href="@{/customer/rooms}" class="btn btn-primary w-100 mt-4">Tiếp tục tìm phòng</a>
+
+        <div sec:authorize="isAuthenticated()">
+            <a th:href="@{/customer/bookings}" class="btn btn-outline-secondary w-100 mt-2">Xem lịch sử đặt phòng</a>
+
+            <form th:action="@{/customer/bookings/{id}/cancel(id=${booking.id})}" method="post" class="mt-2"
+                  th:if="${booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED'}"
+                  onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn đặt phòng này?')">
+                <button type="submit" class="btn btn-outline-danger w-100">Hủy đặt phòng</button>
+            </form>
+        </div>
+
+        <div class="alert alert-light border mt-3 mb-0" sec:authorize="!isAuthenticated()">
+            Bạn đang đặt phòng với tư cách khách vãng lai. Vui lòng <a th:href="@{/login}">đăng nhập</a>
+            (hoặc <a th:href="@{/register}">đăng ký</a> bằng đúng email vừa dùng) để có thể xem lại lịch sử,
+            sửa giờ nhận/trả phòng hoặc hủy đơn sau này.
+        </div>
+    </div>
+
+    <div sec:authorize="isAuthenticated()">
+        <div class="bg-white p-4 rounded shadow-sm mb-4" th:if="${canModify}">
+            <h5 class="fw-bold mb-3">Sửa giờ nhận / trả phòng</h5>
+            <form th:action="@{/customer/bookings/{id}/edit-time(id=${booking.id})}" method="post" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label">Giờ nhận phòng <span class="text-muted fw-normal">(ngày <span th:text="${booking.checkInDate}"></span>)</span></label>
+                    <select name="checkInTime" class="form-select">
+                        <option th:each="t : ${timeOptions}" th:value="${t}" th:text="${t}" th:selected="${t == booking.checkInTime}"></option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Giờ trả phòng <span class="text-muted fw-normal">(ngày <span th:text="${booking.checkOutDate}"></span>)</span></label>
+                    <select name="checkOutTime" class="form-select">
+                        <option th:each="t : ${timeOptions}" th:value="${t}" th:text="${t}" th:selected="${t == booking.checkOutTime}"></option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Lưu</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white p-4 rounded shadow-sm mb-4" th:if="${canModify}">
+            <h5 class="fw-bold mb-3">Đổi / hủy combo</h5>
+            <form th:action="@{/customer/bookings/{id}/edit-combo(id=${booking.id})}" method="post" class="row g-3 align-items-end">
+                <div class="col-md-9">
+                    <select name="comboId" class="form-select">
+                        <option value="">Không dùng combo</option>
+                        <option th:each="c : ${combos}" th:value="${c.id}" th:text="${c.name} + ' (+' + ${#numbers.formatDecimal(c.price, 1, 0)} + 'VND)'"
+                                th:selected="${booking.combo != null and booking.combo.id == c.id}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">Cập nhật combo</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="alert alert-light border" th:unless="${canModify}">
+            Đơn này hiện không thể chỉnh sửa giờ nhận/trả phòng hoặc combo — chỉ áp dụng khi đơn chưa check-in/hủy
+            và còn cách giờ nhận phòng ít nhất 6 tiếng.
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/chatbot-widget :: widget}"></div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>
