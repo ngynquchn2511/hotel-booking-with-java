@@ -6,7 +6,19 @@
                 <p class="small mb-0 mt-1">Đặt phòng khách sạn trực tuyến nhanh chóng, tiện lợi.</p>
             </div>
             <div class="col-md-4 text-md-center">
-                <ul class="list-inline mb-0 small">
+                <!-- Nhan vien/admin: lien ket o lai khu quan tri, khong day sang giao dien khach hang -->
+                <ul class="list-inline mb-0 small" sec:authorize="hasAnyRole('ADMIN','STAFF')">
+                    <li class="list-inline-item mx-2">
+                        <a th:href="@{/admin/dashboard}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none">Tổng quan</a>
+                    </li>
+                    <li class="list-inline-item mx-2">
+                        <a th:href="@{/admin/bookings}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none">Đặt phòng</a>
+                    </li>
+                    <li class="list-inline-item mx-2">
+                        <a th:href="@{/admin/rooms}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none">Phòng</a>
+                    </li>
+                </ul>
+                <ul class="list-inline mb-0 small" sec:authorize="!hasAnyRole('ADMIN','STAFF')">
                     <li class="list-inline-item mx-2">
                         <a th:href="@{/}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none">Trang chủ</a>
                     </li>

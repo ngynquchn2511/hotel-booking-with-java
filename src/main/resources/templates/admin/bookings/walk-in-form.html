@@ -16,6 +16,8 @@
         </div>
 
         <div class="col-md-9">
+            <a th:if="${preselectedRoomId != null}" th:href="@{/admin/rooms/{id}/view(id=${preselectedRoomId})}" class="d-inline-block mb-3">&laquo; Quay lại phòng</a>
+            <a th:unless="${preselectedRoomId != null}" th:href="@{/admin/bookings}" class="d-inline-block mb-3">&laquo; Quay lại danh sách đặt phòng</a>
             <h3 class="fw-bold mb-4">Đặt phòng tại quầy (khách vãng lai)</h3>
 
             <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>

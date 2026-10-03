@@ -33,7 +33,9 @@ public class DiscountCodeService {
 
     @Transactional
     public DiscountCode create(DiscountCodeRequest request) {
-        if (discountCodeRepository.existsByCode(request.getCode())) {
+        // So trung theo dung gia tri DA CHUAN HOA (uppercase) se duoc luu, neu khong "duptest" se lot qua
+        // buoc kiem tra trung voi ma "DUPTEST" da ton tai, roi vo o rang buoc unique cua DB (loi 500 xau xi)
+        if (discountCodeRepository.existsByCode(request.getCode().toUpperCase())) {
             throw new BusinessException("Mã giảm giá này đã tồn tại");
         }
         DiscountCode discountCode = DiscountCode.builder()
@@ -51,7 +53,7 @@ public class DiscountCodeService {
     public DiscountCode update(Long id, DiscountCodeRequest request) {
         DiscountCode discountCode = findById(id);
         if (!discountCode.getCode().equalsIgnoreCase(request.getCode())
-                && discountCodeRepository.existsByCode(request.getCode())) {
+                && discountCodeRepository.existsByCode(request.getCode().toUpperCase())) {
             throw new BusinessException("Mã giảm giá này đã tồn tại");
         }
         discountCode.setCode(request.getCode().toUpperCase());
@@ -77,7 +79,10 @@ public class DiscountCodeService {
     // Kiem tra ma co hop le voi loai khach hang hien tai khong, tra ve so tien duoc giam
     // Se duoc goi that su khi xay dung luong tao booking (Buoc 4)
     public BigDecimal validateAndCalculateDiscount(String code, CustomerType customerType, BigDecimal totalAmount) {
-        Optional<DiscountCode> discountOpt = discountCodeRepository.findByCodeAndActiveTrue(code);
+        // Chuan hoa giong BookingService.createBooking (trim + chu hoa) - neu khong, khach go "sale10" se bi bao
+        // "khong hop le" o nut Kiem tra ma nhung van duoc giam khi bam Xac nhan dat phong
+        String normalizedCode = code == null ? "" : code.trim().toUpperCase();
+        Optional<DiscountCode> discountOpt = discountCodeRepository.findByCodeAndActiveTrue(normalizedCode);
         if (discountOpt.isEmpty()) {
             throw new BusinessException("Mã giảm giá không tồn tại hoặc đã ngừng áp dụng");
         }

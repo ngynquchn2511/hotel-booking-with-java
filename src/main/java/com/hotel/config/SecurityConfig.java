@@ -3,6 +3,10 @@ package com.hotel.config;
 import com.hotel.security.AdminPortalSuccessHandler;
 import com.hotel.security.CustomUserDetailsService;
 import com.hotel.security.CustomerPortalSuccessHandler;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -11,6 +15,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
@@ -27,12 +36,36 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // Spring Security 6 chi tao CsrfToken THUC SU (va phien HTTP di kem) khi co noi nao do GOI
+    // csrfToken.getToken() lan dau (lazy, de chong BREACH). Fragment chatbot-widget doc "_csrf.token"
+    // o GAN CUOI trang (sau rat nhieu CSS/JS nhung) - voi trang du lon (rooms.html, customer/rooms.html),
+    // luc Thymeleaf render toi do thi Tomcat da flush/commit response roi, nen khong the tao session moi
+    // nua -> IllegalStateException "Cannot create a session after the response has been committed",
+    // ung dung bi cat response giua chung (thieu han phan footer). Filter nay ep "cham" vao token ngay
+    // tu dau request (truoc khi co byte nao duoc ghi ra), dung theo khuyen nghi chinh thuc cua Spring
+    // Security cho tinh huong nay.
+    @Bean
+    public OncePerRequestFilter csrfTokenEagerLoadFilter() {
+        return new OncePerRequestFilter() {
+            @Override
+            protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+                    throws ServletException, IOException {
+                CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+                if (csrfToken != null) {
+                    csrfToken.getToken();
+                }
+                filterChain.doFilter(request, response);
+            }
+        };
+    }
+
     // Cong danh cho STAFF va ADMIN - trang dang nhap tai /admin
     // Phai dat @Order(1) de duoc xet truoc chain con lai (pham vi hep hon: /admin/**, /staff/**)
     @Bean
     @Order(1)
     public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
         http
+                .addFilterAfter(csrfTokenEagerLoadFilter(), CsrfFilter.class)
                 .securityMatcher("/admin", "/admin/**", "/staff/**")
                 .authorizeHttpRequests(auth -> auth
                         // /admin la diem vao duy nhat hien trang dang nhap quan tri.
@@ -72,6 +105,7 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain customerFilterChain(HttpSecurity http) throws Exception {
         http
+                .addFilterAfter(csrfTokenEagerLoadFilter(), CsrfFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/home", "/rooms", "/rooms/**", "/login", "/register",
                                 "/css/**", "/js/**", "/images/**", "/uploads/**", "/page-images/**").permitAll()
