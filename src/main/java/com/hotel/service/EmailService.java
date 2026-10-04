@@ -1,6 +1,7 @@
 package com.hotel.service;
 
 import com.hotel.entity.Booking;
+import com.hotel.entity.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,32 @@ public class EmailService {
             log.info("Da gui email xac nhan cho booking #{} toi {}", booking.getId(), booking.getGuestEmail());
         } catch (Exception ex) {
             log.error("Gui email xac nhan that bai cho booking #{} toi {}", booking.getId(), booking.getGuestEmail(), ex);
+        }
+    }
+
+    // Gui lien ket dat lai mat khau. Neu chua cau hinh mail thi ghi lien ket ra log de van thu nghiem duoc.
+    public void sendPasswordReset(User user, String resetLink) {
+        if (senderEmail == null || senderEmail.isBlank()
+                || senderPassword == null || senderPassword.isBlank()) {
+            log.warn("Chua dat MAIL_USERNAME va MAIL_PASSWORD - lien ket dat lai mat khau cho {}: {}", user.getEmail(), resetLink);
+            return;
+        }
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("Hotel Booking <" + senderEmail + ">");
+            message.setTo(user.getEmail());
+            message.setSubject("Hotel Booking - Đặt lại mật khẩu");
+            message.setText("Xin chào " + user.getFullName() + ",\n\n"
+                    + "Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.\n"
+                    + "Nhấn vào liên kết dưới đây để tạo mật khẩu mới (có hiệu lực trong "
+                    + UserService.RESET_TOKEN_VALID_MINUTES + " phút):\n\n"
+                    + resetLink + "\n\n"
+                    + "Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này. Mật khẩu hiện tại vẫn được giữ nguyên.\n\n"
+                    + "Trân trọng,\nHotel Booking");
+            mailSender.send(message);
+            log.info("Da gui email dat lai mat khau toi {}", user.getEmail());
+        } catch (Exception ex) {
+            log.error("Gui email dat lai mat khau that bai toi {}", user.getEmail(), ex);
         }
     }
 

@@ -130,6 +130,54 @@ class AuthIT {
     }
 
     @Test
+    void forgotPassword_registeredEmail_createsTokenAndShowsSent() throws Exception {
+        mockMvc.perform(post("/forgot-password").with(csrf()).param("email", "customer.it@mail.com"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("auth/forgot-password"))
+                .andExpect(model().attribute("sent", true));
+
+        User user = userRepository.findByEmail("customer.it@mail.com").orElseThrow();
+        assertNotNull(user.getResetToken());
+        assertNotNull(user.getResetTokenExpiry());
+    }
+
+    @Test
+    void forgotPassword_unknownEmail_showsError() throws Exception {
+        mockMvc.perform(post("/forgot-password").with(csrf()).param("email", "khongton.tai@mail.com"))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("errorMessage"))
+                .andExpect(model().attributeDoesNotExist("sent"));
+    }
+
+    @Test
+    void resetPassword_validToken_changesPasswordAndClearsToken() throws Exception {
+        mockMvc.perform(post("/forgot-password").with(csrf()).param("email", "customer.it@mail.com"));
+        String token = userRepository.findByEmail("customer.it@mail.com").orElseThrow().getResetToken();
+
+        mockMvc.perform(get("/reset-password").param("token", token))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("tokenValid", true));
+
+        mockMvc.perform(post("/reset-password").with(csrf())
+                        .param("token", token)
+                        .param("password", "MatKhauMoi1")
+                        .param("confirmPassword", "MatKhauMoi1"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login?reset=true"));
+
+        User user = userRepository.findByEmail("customer.it@mail.com").orElseThrow();
+        assertTrue(passwordEncoder.matches("MatKhauMoi1", user.getPassword()));
+        assertNull(user.getResetToken());
+    }
+
+    @Test
+    void resetPassword_invalidToken_showsInvalidLink() throws Exception {
+        mockMvc.perform(get("/reset-password").param("token", "token-sai"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("tokenValid", false));
+    }
+
+    @Test
     void anonymousAccessToBookingHistory_redirectsToLogin() throws Exception {
         mockMvc.perform(get("/customer/bookings"))
                 .andExpect(status().is3xxRedirection())

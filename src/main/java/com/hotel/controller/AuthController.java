@@ -1,7 +1,9 @@
 package com.hotel.controller;
 
 import com.hotel.dto.RegisterRequest;
+import com.hotel.dto.ResetPasswordRequest;
 import com.hotel.exception.BusinessException;
+import com.hotel.service.EmailService;
 import com.hotel.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -10,14 +12,18 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @Controller
 public class AuthController {
 
     private final UserService userService;
+    private final EmailService emailService;
 
-    public AuthController(UserService userService) {
+    public AuthController(UserService userService, EmailService emailService) {
         this.userService = userService;
+        this.emailService = emailService;
     }
 
     @GetMapping("/login")
@@ -47,5 +53,64 @@ public class AuthController {
         }
 
         return "redirect:/login?registered=true";
+    }
+
+    @GetMapping("/forgot-password")
+    public String forgotPasswordPage() {
+        return "auth/forgot-password";
+    }
+
+    @PostMapping("/forgot-password")
+    public String forgotPassword(@RequestParam(value = "email", required = false) String email, Model model) {
+        if (email == null || email.isBlank()) {
+            model.addAttribute("errorMessage", "Vui lòng nhập email");
+            return "auth/forgot-password";
+        }
+
+        var user = userService.createPasswordResetToken(email).orElse(null);
+        if (user == null) {
+            model.addAttribute("errorMessage", "Email này chưa được đăng ký tài khoản khách hàng");
+            model.addAttribute("email", email.trim());
+            return "auth/forgot-password";
+        }
+
+        String link = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/reset-password")
+                .queryParam("token", user.getResetToken())
+                .toUriString();
+        emailService.sendPasswordReset(user, link);
+
+        model.addAttribute("sent", true);
+        model.addAttribute("email", email.trim());
+        return "auth/forgot-password";
+    }
+
+    @GetMapping("/reset-password")
+    public String resetPasswordPage(@RequestParam(value = "token", required = false) String token, Model model) {
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken(token);
+        model.addAttribute("resetPasswordRequest", request);
+        model.addAttribute("tokenValid", userService.isResetTokenValid(token));
+        return "auth/reset-password";
+    }
+
+    @PostMapping("/reset-password")
+    public String resetPassword(@Valid @ModelAttribute("resetPasswordRequest") ResetPasswordRequest request,
+                                BindingResult bindingResult,
+                                Model model) {
+        boolean tokenValid = userService.isResetTokenValid(request.getToken());
+        model.addAttribute("tokenValid", tokenValid);
+        if (!tokenValid || bindingResult.hasErrors()) {
+            return "auth/reset-password";
+        }
+
+        try {
+            userService.resetPassword(request.getToken(), request.getPassword(), request.getConfirmPassword());
+        } catch (BusinessException ex) {
+            model.addAttribute("errorMessage", ex.getMessage());
+            return "auth/reset-password";
+        }
+
+        return "redirect:/login?reset=true";
     }
 }

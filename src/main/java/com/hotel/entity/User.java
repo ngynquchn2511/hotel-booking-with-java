@@ -43,6 +43,13 @@ public class User {
     @Column(name = "customer_type", nullable = false, length = 20)
     private CustomerType customerType;
 
+    // Token dat lai mat khau (quen mat khau) - chi ton tai trong thoi gian ngan, xoa sau khi dung
+    @Column(name = "reset_token", length = 64, unique = true)
+    private String resetToken;
+
+    @Column(name = "reset_token_expiry")
+    private LocalDateTime resetTokenExpiry;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

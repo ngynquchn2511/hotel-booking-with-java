@@ -108,6 +108,7 @@ public class SecurityConfig {
                 .addFilterAfter(csrfTokenEagerLoadFilter(), CsrfFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/home", "/rooms", "/rooms/**", "/login", "/register",
+                                "/forgot-password", "/reset-password",
                                 "/css/**", "/js/**", "/images/**", "/uploads/**", "/page-images/**").permitAll()
                         // Chatbot tu van - khach chua dang nhap cung phai hoi duoc
                         .requestMatchers("/api/chatbot/**").permitAll()
