@@ -23,6 +23,9 @@
                         <a th:href="@{/}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none">Trang chủ</a>
                     </li>
                     <li class="list-inline-item mx-2">
+                        <a th:href="@{/about}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none">Giới thiệu</a>
+                    </li>
+                    <li class="list-inline-item mx-2">
                         <a th:href="@{/rooms}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none">Danh sách phòng</a>
                     </li>
                     <li class="list-inline-item mx-2" sec:authorize="hasRole('CUSTOMER')">

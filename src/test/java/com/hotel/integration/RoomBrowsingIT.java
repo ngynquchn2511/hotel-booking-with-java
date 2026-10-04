@@ -50,6 +50,16 @@ class RoomBrowsingIT {
     }
 
     @Test
+    void aboutPage_anonymous_rendersHotelInfoAndRoomTypes() throws Exception {
+        mockMvc.perform(get("/about"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("about"))
+                .andExpect(model().attributeExists("roomTypes", "roomCount", "combos"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Khách sạn EAUT")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Phong Doi IT")));
+    }
+
+    @Test
     void customerRoomSearch_noDates_showsFormOnly() throws Exception {
         mockMvc.perform(get("/customer/rooms"))
                 .andExpect(status().isOk())

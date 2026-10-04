@@ -4,6 +4,7 @@
         <a class="navbar-brand fw-bold" th:href="@{/}" sec:authorize="!hasAnyRole('ADMIN','STAFF')">Hotel Booking</a>
         <a class="navbar-brand fw-bold" th:href="@{/admin/dashboard}" sec:authorize="hasAnyRole('ADMIN','STAFF')">Hotel Booking</a>
         <div class="ms-auto d-flex align-items-center gap-3">
+            <a th:href="@{/about}" class="text-decoration-none text-dark" sec:authorize="!hasAnyRole('ADMIN','STAFF')">Giới thiệu</a>
             <a th:href="@{/rooms}" class="text-decoration-none text-dark" sec:authorize="!hasAnyRole('ADMIN','STAFF')">Danh sách phòng</a>
             <a th:href="@{/admin/rooms}" class="text-decoration-none text-dark" sec:authorize="hasAnyRole('ADMIN','STAFF')">Danh sách phòng</a>
             <a th:href="@{/customer/bookings}" class="text-decoration-none text-dark" sec:authorize="hasRole('CUSTOMER')">Lịch sử đặt phòng</a>
