@@ -8,6 +8,18 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600;1,9..144,700&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link th:href="@{/css/eaut-theme.css}" rel="stylesheet">
+    <style>
+        /* Chon so sao: radio dao nguoc thu tu de to mau cac sao ben trai khi hover/chon */
+        .star-picker { display: inline-flex; flex-direction: row-reverse; gap: .25rem; }
+        .star-picker input { position: absolute; opacity: 0; pointer-events: none; }
+        .star-picker label { font-size: 2rem; line-height: 1; cursor: pointer; color: #c9d8e6; transition: transform .12s, color .12s; }
+        .star-picker label:hover, .star-picker label:hover ~ label,
+        .star-picker input:checked ~ label { color: #f2b705; }
+        .star-picker label:hover { transform: scale(1.15); }
+        .star-picker input:focus-visible + label { outline: 2px solid var(--ink); border-radius: 4px; }
+        .review-stars .bi { color: #f2b705; font-size: 1.2rem; }
+        .section-anchor { scroll-margin-top: 100px; }
+    </style>
 </head>
 <body class="eaut" th:style="'--page-bg: url(' + @{/page-images/datphongthanhcong.jpg} + ')'">
 
@@ -26,6 +38,7 @@
     </div>
 
     <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+    <div th:if="${reviewSuccess}" class="alert alert-success" th:text="${reviewSuccess}"></div>
 
     <div class="bg-white p-4 rounded shadow-sm mb-4 ticket">
         <div class="d-flex justify-content-between align-items-start mb-3">
@@ -81,6 +94,34 @@
             (hoặc <a th:href="@{/register}">đăng ký</a> bằng đúng email vừa dùng) để có thể xem lại lịch sử,
             sửa giờ nhận/trả phòng hoặc hủy đơn sau này.
         </div>
+    </div>
+
+    <!-- Danh gia sau khi tra phong -->
+    <div class="bg-white p-4 rounded shadow-sm mb-4 section-anchor" id="danh-gia" th:if="${review != null or canReview}">
+        <h5 class="fw-bold mb-3"><i class="bi bi-chat-heart me-2"></i>Đánh giá kỳ nghỉ</h5>
+
+        <div th:if="${review != null}">
+            <div class="review-stars mb-2">
+                <i th:each="n : ${#numbers.sequence(1, 5)}" th:class="${n <= review.rating} ? 'bi bi-star-fill' : 'bi bi-star'"></i>
+                <span class="ms-2 fw-bold" th:text="${review.rating} + '/5'"></span>
+            </div>
+            <p class="mb-1" th:if="${review.comment != null}" th:text="'“' + ${review.comment} + '”'"></p>
+            <div class="small text-muted" th:text="'Đã gửi lúc ' + ${#temporals.format(review.createdAt, 'HH:mm dd/MM/yyyy')}"></div>
+        </div>
+
+        <form th:if="${review == null and canReview}" th:action="@{/customer/bookings/{id}/review(id=${booking.id})}" method="post">
+            <p class="text-muted mb-2">Bạn thấy kỳ nghỉ vừa rồi thế nào? Chọn số sao và để lại vài lời nhé.</p>
+            <div class="star-picker mb-3" role="radiogroup" aria-label="Số sao">
+                <input type="radio" name="rating" id="star5" value="5" required><label for="star5" title="5 sao - Tuyệt vời"><i class="bi bi-star-fill"></i></label>
+                <input type="radio" name="rating" id="star4" value="4"><label for="star4" title="4 sao - Rất tốt"><i class="bi bi-star-fill"></i></label>
+                <input type="radio" name="rating" id="star3" value="3"><label for="star3" title="3 sao - Bình thường"><i class="bi bi-star-fill"></i></label>
+                <input type="radio" name="rating" id="star2" value="2"><label for="star2" title="2 sao - Chưa hài lòng"><i class="bi bi-star-fill"></i></label>
+                <input type="radio" name="rating" id="star1" value="1"><label for="star1" title="1 sao - Tệ"><i class="bi bi-star-fill"></i></label>
+            </div>
+            <textarea name="comment" class="form-control mb-3" rows="3" maxlength="1000"
+                      placeholder="Phòng ốc, dịch vụ, nhân viên... (không bắt buộc)"></textarea>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Gửi đánh giá</button>
+        </form>
     </div>
 
     <div sec:authorize="isAuthenticated()">

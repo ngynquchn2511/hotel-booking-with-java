@@ -13,7 +13,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Function;
@@ -28,6 +27,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final BookingService bookingService;
+    private final EmailService emailService;
 
     @Value("${app.payment.bank-id:MB}")
     private String bankId;
@@ -38,9 +38,10 @@ public class PaymentService {
     @Value("${app.payment.account-name:KHACH SAN HOTEL BOOKING}")
     private String accountName;
 
-    public PaymentService(PaymentRepository paymentRepository, BookingService bookingService) {
+    public PaymentService(PaymentRepository paymentRepository, BookingService bookingService, EmailService emailService) {
         this.paymentRepository = paymentRepository;
         this.bookingService = bookingService;
+        this.emailService = emailService;
     }
 
     public Optional<Payment> findByBookingId(Long bookingId) {
@@ -117,7 +118,26 @@ public class PaymentService {
                 default -> throw new BusinessException("Phương thức thanh toán bằng thẻ hiện chưa được hỗ trợ");
             }
         }
-        return bookingService.checkOut(bookingId);
+        Booking checkedOut = bookingService.checkOut(bookingId);
+        // Gui hoa don cho khach qua email (thay cho email bao "da check-out" dang chu thuong)
+        findByBookingId(bookingId).ifPresent(payment -> emailService.sendInvoice(checkedOut, payment));
+        return checkedOut;
+    }
+
+    // Nhan vien bam "Gui lai hoa don" - tra ve email da gui toi
+    @Transactional(readOnly = true)
+    public String resendInvoice(Long bookingId) {
+        Booking booking = bookingService.findById(bookingId);
+        Payment payment = findByBookingId(bookingId)
+                .filter(p -> p.getStatus() == PaymentStatus.PAID)
+                .orElseThrow(() -> new BusinessException("Đơn chưa được thanh toán nên chưa có hóa đơn để gửi"));
+        if (booking.getGuestEmail() == null || booking.getGuestEmail().isBlank()) {
+            throw new BusinessException("Đơn này không có email người nhận phòng");
+        }
+        if (!emailService.sendInvoice(booking, payment)) {
+            throw new BusinessException("Gửi email thất bại. Kiểm tra cấu hình MAIL_USERNAME / MAIL_PASSWORD");
+        }
+        return booking.getGuestEmail();
     }
 
     // Du lieu hien thi hoa don - chi xuat duoc khi don da thanh toan
@@ -131,8 +151,7 @@ public class PaymentService {
         data.put("payment", payment);
         data.put("nights", nights);
         data.put("roomAmount", booking.getRoom().getPrice().multiply(BigDecimal.valueOf(nights)));
-        data.put("invoiceNo", "HD" + payment.getPaymentDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-                + "-" + booking.getId());
+        data.put("invoiceNo", payment.getInvoiceNo());
         return data;
     }
 

@@ -11,6 +11,7 @@ import com.hotel.service.ComboService;
 import com.hotel.service.CustomerManagementService;
 import com.hotel.service.DiscountCodeService;
 import com.hotel.service.PaymentService;
+import com.hotel.service.ReviewService;
 import com.hotel.service.RoomService;
 import com.hotel.util.PaginationUtil;
 import jakarta.validation.Valid;
@@ -44,17 +45,19 @@ public class CustomerBookingController {
     private final DiscountCodeService discountCodeService;
     private final CustomerManagementService customerManagementService;
     private final PaymentService paymentService;
+    private final ReviewService reviewService;
 
     public CustomerBookingController(BookingService bookingService, RoomService roomService,
                                       ComboService comboService, DiscountCodeService discountCodeService,
                                       CustomerManagementService customerManagementService,
-                                      PaymentService paymentService) {
+                                      PaymentService paymentService, ReviewService reviewService) {
         this.bookingService = bookingService;
         this.roomService = roomService;
         this.comboService = comboService;
         this.discountCodeService = discountCodeService;
         this.customerManagementService = customerManagementService;
         this.paymentService = paymentService;
+        this.reviewService = reviewService;
     }
 
     // Danh sach lich su dat phong - chi danh cho khach hang DA dang nhap (khach vang lai khong co lich su)
@@ -66,6 +69,7 @@ public class CustomerBookingController {
         List<Booking> pageBookings = PaginationUtil.slice(all, page, PaginationUtil.DEFAULT_PAGE_SIZE);
         model.addAttribute("bookings", pageBookings);
         model.addAttribute("payments", paymentService.findByBookings(pageBookings));
+        model.addAttribute("reviews", reviewService.findByBookings(pageBookings));
         model.addAttribute("currentPage", Math.max(1, Math.min(page, totalPages)));
         model.addAttribute("totalPages", totalPages);
         model.addAttribute("pageNumbers", PaginationUtil.pageNumbersToShow(page, totalPages));
@@ -206,6 +210,8 @@ public class CustomerBookingController {
 
         model.addAttribute("booking", booking);
         model.addAttribute("payment", paymentService.findByBookingId(id).orElse(null));
+        model.addAttribute("review", reviewService.findByBookingId(id).orElse(null));
+        model.addAttribute("canReview", userDetails != null && reviewService.canReview(booking, userDetails.getUser().getId()));
         model.addAttribute("canModify", bookingService.canModify(booking));
         model.addAttribute("timeOptions", generateTimeOptions());
         model.addAttribute("combos", comboService.findActive());
@@ -225,6 +231,22 @@ public class CustomerBookingController {
         }
         model.addAttribute("backUrl", "/customer/bookings/" + id);
         return "admin/bookings/invoice";
+    }
+
+    // Khach danh gia don da tra phong (1 lan / don)
+    @PostMapping("/{id}/review")
+    public String review(@PathVariable Long id,
+                         @RequestParam(required = false) Integer rating,
+                         @RequestParam(required = false) String comment,
+                         @AuthenticationPrincipal CustomUserDetails userDetails,
+                         RedirectAttributes redirectAttributes) {
+        try {
+            reviewService.createReview(id, userDetails.getUser().getId(), rating, comment);
+            redirectAttributes.addFlashAttribute("reviewSuccess", "Cảm ơn bạn đã đánh giá! Ý kiến của bạn giúp chúng tôi phục vụ tốt hơn.");
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/customer/bookings/" + id + "#danh-gia";
     }
 
     @PostMapping("/{id}/edit-time")

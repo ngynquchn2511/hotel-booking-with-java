@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Entity
 @Table(name = "payments")
@@ -40,4 +41,10 @@ public class Payment {
 
     @Column(name = "payment_date")
     private LocalDateTime paymentDate;
+
+    // So hoa don: HD<ngay thanh toan>-<ma don>, VD HD20261009-15
+    public String getInvoiceNo() {
+        String date = paymentDate != null ? paymentDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) : "";
+        return "HD" + date + "-" + booking.getId();
+    }
 }

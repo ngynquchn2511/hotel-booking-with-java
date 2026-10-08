@@ -75,6 +75,11 @@
                 <a th:if="${payment != null and payment.status.name() == 'PAID'}" th:href="@{/admin/bookings/{id}/invoice(id=${booking.id})}"
                    target="_blank" class="btn btn-outline-primary">Xuất hóa đơn</a>
 
+                <form th:if="${payment != null and payment.status.name() == 'PAID'}" class="d-inline"
+                      th:action="@{/admin/bookings/{id}/invoice/email(id=${booking.id})}" method="post">
+                    <button type="submit" class="btn btn-outline-secondary">Gửi hóa đơn qua email</button>
+                </form>
+
                 <form th:if="${booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED'}"
                       th:action="@{/admin/bookings/{id}/cancel(id=${booking.id})}" method="post" class="d-inline"
                       onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn này?')">

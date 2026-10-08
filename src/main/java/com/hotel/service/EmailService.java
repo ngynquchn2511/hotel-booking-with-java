@@ -1,13 +1,25 @@
 package com.hotel.service;
 
 import com.hotel.entity.Booking;
+import com.hotel.entity.BookingStatus;
+import com.hotel.entity.Payment;
 import com.hotel.entity.User;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
+
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Locale;
 
 @Service
 public class EmailService {
@@ -29,6 +41,10 @@ public class EmailService {
     // Gui email xac nhan sau khi dat phong thanh cong. Neu gui that bai (VD: chua cau hinh dung mat khau ung dung)
     // thi CHI ghi log canh bao, KHONG lam hong luong dat phong - dat phong van thanh cong binh thuong.
     public void sendBookingConfirmation(Booking booking) {
+        // Khi tra phong khach nhan email hoa don (sendInvoice) thay cho email thong bao trang thai
+        if (booking.getStatus() == BookingStatus.CHECKED_OUT) {
+            return;
+        }
         if (booking.getGuestEmail() == null || booking.getGuestEmail().isBlank()) {
             log.warn("Khong gui email xac nhan cho booking #{} vi email nguoi nhan trong", booking.getId());
             return;
@@ -76,6 +92,109 @@ public class EmailService {
         } catch (Exception ex) {
             log.error("Gui email dat lai mat khau that bai toi {}", user.getEmail(), ex);
         }
+    }
+
+    // Gui hoa don thanh toan (HTML) sau khi check-out. Tra ve true neu gui thanh cong.
+    // Gui that bai chi ghi log, khong lam hong luong check-out.
+    public boolean sendInvoice(Booking booking, Payment payment) {
+        if (booking.getGuestEmail() == null || booking.getGuestEmail().isBlank()) {
+            log.warn("Khong gui hoa don cho booking #{} vi email nguoi nhan trong", booking.getId());
+            return false;
+        }
+        if (senderEmail == null || senderEmail.isBlank()
+                || senderPassword == null || senderPassword.isBlank()) {
+            log.error("Khong gui hoa don cho booking #{}: chua dat MAIL_USERNAME va MAIL_PASSWORD", booking.getId());
+            return false;
+        }
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            helper.setFrom(senderEmail, "Hotel Booking");
+            helper.setTo(booking.getGuestEmail());
+            helper.setSubject("Hotel Booking - Hóa đơn " + payment.getInvoiceNo() + " (đơn #" + booking.getId() + ")");
+            helper.setText(buildInvoiceHtml(booking, payment), true);
+            mailSender.send(message);
+            log.info("Da gui hoa don {} toi {}", payment.getInvoiceNo(), booking.getGuestEmail());
+            return true;
+        } catch (Exception ex) {
+            log.error("Gui hoa don that bai cho booking #{} toi {}", booking.getId(), booking.getGuestEmail(), ex);
+            return false;
+        }
+    }
+
+    // Email HTML dung inline style (Gmail bo qua the <style>), cung tong trang + xanh baby voi website
+    private String buildInvoiceHtml(Booking booking, Payment payment) {
+        long nights = ChronoUnit.DAYS.between(booking.getCheckInDate(), booking.getCheckOutDate());
+        BigDecimal roomAmount = booking.getRoom().getPrice().multiply(BigDecimal.valueOf(nights));
+        DateTimeFormatter date = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        String paidAt = payment.getPaymentDate() != null
+                ? payment.getPaymentDate().format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")) : "";
+
+        StringBuilder rows = new StringBuilder();
+        rows.append(invoiceRow("Tiền phòng " + booking.getRoom().getRoomNumber() + " (" + booking.getRoom().getRoomType().getName() + ")",
+                money(booking.getRoom().getPrice()) + " x " + nights + " đêm", money(roomAmount)));
+        if (booking.getCombo() != null) {
+            rows.append(invoiceRow("Combo: " + booking.getCombo().getName(), "1", money(booking.getCombo().getPrice())));
+        }
+        if (booking.getDiscountCode() != null && booking.getDiscountAmount() != null
+                && booking.getDiscountAmount().signum() > 0) {
+            rows.append(invoiceRow("Giảm giá (mã " + booking.getDiscountCode().getCode() + ")", "",
+                    "-" + money(booking.getDiscountAmount())));
+        }
+
+        return """
+                <div style="margin:0;padding:24px;background:#f3faff;font-family:Arial,Helvetica,sans-serif;color:#14365a">
+                  <div style="max-width:620px;margin:0 auto;background:#ffffff;border:1.5px solid #14365a;border-radius:14px">
+                    <div style="padding:22px 26px;background:#9fd8f5;border-bottom:1.5px solid #14365a;border-radius:12px 12px 0 0">
+                      <div style="font-size:12px;letter-spacing:2px;font-weight:bold">HOTEL BOOKING</div>
+                      <div style="font-size:24px;font-weight:bold;margin-top:4px">Hóa đơn thanh toán</div>
+                      <div style="margin-top:6px">Số: <b>%s</b> &middot; Ngày: %s</div>
+                    </div>
+                    <div style="padding:22px 26px">
+                      <p style="margin:0 0 14px">Xin chào <b>%s</b>,</p>
+                      <p style="margin:0 0 18px">Cảm ơn bạn đã lưu trú tại Hotel Booking. Dưới đây là hóa đơn cho đơn đặt phòng
+                        <b>#%d</b> (nhận phòng %s, trả phòng %s).</p>
+                      <table style="width:100%%;border-collapse:collapse;font-size:14px">
+                        <tr style="background:#e3f4fd">
+                          <th style="padding:10px 12px;text-align:left">Nội dung</th>
+                          <th style="padding:10px 12px;text-align:right">Đơn giá</th>
+                          <th style="padding:10px 12px;text-align:right">Thành tiền</th>
+                        </tr>
+                        %s
+                        <tr>
+                          <td colspan="2" style="padding:14px 12px;text-align:right;font-weight:bold">Tổng thanh toán</td>
+                          <td style="padding:14px 12px;text-align:right;font-weight:bold;font-size:18px">%s VND</td>
+                        </tr>
+                      </table>
+                      <p style="margin:18px 0 0">Phương thức: <b>%s</b> &middot; Trạng thái: <b style="color:#1d8a4e">%s</b></p>
+                      <p style="margin:22px 0 0">Hẹn gặp lại bạn trong kỳ nghỉ tới!<br>Trân trọng,<br><b>Hotel Booking</b></p>
+                    </div>
+                  </div>
+                </div>
+                """.formatted(
+                esc(payment.getInvoiceNo()), paidAt,
+                esc(booking.getGuestName()),
+                booking.getId(), booking.getCheckInDate().format(date), booking.getCheckOutDate().format(date),
+                rows,
+                money(payment.getAmount()),
+                esc(payment.getPaymentMethod().getVietnameseLabel()), esc(payment.getStatus().getVietnameseLabel()));
+    }
+
+    private String invoiceRow(String name, String unit, String amount) {
+        String cell = "padding:10px 12px;border-bottom:1px dashed #b9dcf0;";
+        return "<tr><td style=\"" + cell + "\">" + esc(name) + "</td>"
+                + "<td style=\"" + cell + "text-align:right\">" + esc(unit) + "</td>"
+                + "<td style=\"" + cell + "text-align:right\">" + esc(amount) + "</td></tr>";
+    }
+
+    // Dinh dang tien kieu Viet Nam: 1.250.000
+    private String money(BigDecimal value) {
+        DecimalFormat format = new DecimalFormat("#,##0", DecimalFormatSymbols.getInstance(new Locale("vi", "VN")));
+        return format.format(value == null ? BigDecimal.ZERO : value);
+    }
+
+    private String esc(String value) {
+        return value == null ? "" : HtmlUtils.htmlEscape(value);
     }
 
     private String buildSubject(Booking booking) {

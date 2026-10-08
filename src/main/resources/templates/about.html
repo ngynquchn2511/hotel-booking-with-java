@@ -369,11 +369,25 @@
     </div>
     <div class="marquee">
         <div class="marquee-track" id="marqueeTrack">
+            <!-- Danh gia that cua khach da tra phong -->
+            <div class="review" th:each="rv : ${reviews}">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="avatar" th:text="${#strings.substring(rv.displayName, 0, 1)}">K</div>
+                    <div class="text-start">
+                        <div class="fw-semibold" th:text="${rv.displayName}">Khách hàng</div>
+                        <div class="stars small"><i th:each="n : ${#numbers.sequence(1, 5)}" th:class="${n <= rv.rating} ? 'bi bi-star-fill' : 'bi bi-star'"></i></div>
+                    </div>
+                </div>
+                <p class="muted mb-0 text-start" th:text="'“' + ${rv.comment} + '”'">Nhận xét</p>
+            </div>
+            <!-- Chua co danh gia that thi hien nhan xet mau -->
+            <th:block th:if="${#lists.isEmpty(reviews)}">
             <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#ec4899,#8b5cf6)">L</div><div class="text-start"><div class="fw-semibold">Lan Anh</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div></div></div><p class="muted mb-0 text-start">“Phòng sạch, view đẹp, nhân viên cực kỳ thân thiện. Nhất định sẽ quay lại!”</p></div>
             <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#3b82f6,#22d3ee)">M</div><div class="text-start"><div class="fw-semibold">Minh Đức</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div></div></div><p class="muted mb-0 text-start">“Đặt phòng online rất nhanh, có email xác nhận ngay. Combo lẩu ngon xuất sắc.”</p></div>
             <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">H</div><div class="text-start"><div class="fw-semibold">Thu Hà</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i></div></div></div><p class="muted mb-0 text-start">“Gia đình mình rất thích hồ bơi. Các bé chơi cả ngày không chán.”</p></div>
             <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#10b981,#06b6d4)">T</div><div class="text-start"><div class="fw-semibold">Quốc Tuấn</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div></div></div><p class="muted mb-0 text-start">“Đi công tác ở đây rất tiện, check-in nhanh, wifi mạnh, giá hợp lý.”</p></div>
             <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#8b5cf6,#3b82f6)">N</div><div class="text-start"><div class="fw-semibold">Bảo Ngọc</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div></div></div><p class="muted mb-0 text-start">“Phòng VIP xứng đáng từng đồng. Giường êm, phòng tắm cực xịn.”</p></div>
+            </th:block>
         </div>
     </div>
 </section>

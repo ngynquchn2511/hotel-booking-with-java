@@ -1,5 +1,7 @@
 package com.hotel.service;
 
+import com.hotel.dto.ChangePasswordRequest;
+import com.hotel.dto.ProfileUpdateRequest;
 import com.hotel.dto.RegisterRequest;
 import com.hotel.entity.User;
 import com.hotel.entity.UserRole;
@@ -88,6 +90,43 @@ public class UserService {
         user.setResetToken(null);
         user.setResetTokenExpiry(null);
         userRepository.save(user);
+    }
+
+    public User findById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy tài khoản"));
+    }
+
+    // Khach tu sua ho ten / so dien thoai. So dien thoai dung de tim khach khi dat phong tai quay nen khong duoc trung
+    @Transactional
+    public User updateProfile(Long userId, ProfileUpdateRequest request) {
+        User user = findById(userId);
+        String phone = request.getPhoneNumber().trim();
+        userRepository.findByPhoneNumber(phone)
+                .filter(other -> !other.getId().equals(userId))
+                .ifPresent(other -> {
+                    throw new BusinessException("Số điện thoại này đã được dùng cho tài khoản khác");
+                });
+        user.setFullName(request.getFullName().trim());
+        user.setPhoneNumber(phone);
+        return userRepository.save(user);
+    }
+
+    // Doi mat khau khi dang dang nhap - bat buoc nhap dung mat khau hien tai
+    @Transactional
+    public User changePassword(Long userId, ChangePasswordRequest request) {
+        User user = findById(userId);
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new BusinessException("Mật khẩu hiện tại không đúng");
+        }
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new BusinessException("Mật khẩu xác nhận không khớp");
+        }
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new BusinessException("Mật khẩu mới phải khác mật khẩu hiện tại");
+        }
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        return userRepository.save(user);
     }
 
     private Optional<User> findValidResetUser(String token) {

@@ -60,6 +60,9 @@
                     <a th:href="@{/customer/bookings/{id}(id=${b.id})}" class="btn btn-sm btn-outline-primary">Xem chi tiết</a>
                     <a th:if="${payments[b.id] != null and payments[b.id].status.name() == 'PAID'}" target="_blank"
                        th:href="@{/customer/bookings/{id}/invoice(id=${b.id})}" class="btn btn-sm btn-outline-success">Hóa đơn</a>
+                    <a th:if="${b.status.name() == 'CHECKED_OUT' and reviews[b.id] == null}"
+                       th:href="@{/customer/bookings/{id}(id=${b.id})} + '#danh-gia'" class="btn btn-sm btn-primary"><i class="bi bi-star me-1"></i>Đánh giá</a>
+                    <span th:if="${reviews[b.id] != null}" class="badge bg-warning" th:text="${reviews[b.id].rating} + ' ★'"></span>
                 </td>
             </tr>
             </tbody>

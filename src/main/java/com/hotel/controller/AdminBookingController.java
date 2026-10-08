@@ -135,6 +135,18 @@ public class AdminBookingController {
         return "admin/bookings/invoice";
     }
 
+    // Gui lai hoa don qua email cho khach (VD khach bao chua nhan duoc)
+    @PostMapping("/{id}/invoice/email")
+    public String emailInvoice(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            String email = paymentService.resendInvoice(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã gửi hóa đơn tới " + email);
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/bookings/" + id;
+    }
+
     @PostMapping("/{id}/cancel")
     public String cancel(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {

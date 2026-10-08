@@ -8,6 +8,7 @@
             <a th:href="@{/rooms}" class="text-decoration-none text-dark" sec:authorize="!hasAnyRole('ADMIN','STAFF')">Danh sách phòng</a>
             <a th:href="@{/admin/rooms}" class="text-decoration-none text-dark" sec:authorize="hasAnyRole('ADMIN','STAFF')">Danh sách phòng</a>
             <a th:href="@{/customer/bookings}" class="text-decoration-none text-dark" sec:authorize="hasRole('CUSTOMER')">Lịch sử đặt phòng</a>
+            <a th:href="@{/customer/account}" class="text-decoration-none text-dark" sec:authorize="hasRole('CUSTOMER')">Tài khoản</a>
 
             <div sec:authorize="isAuthenticated()" class="d-flex align-items-center gap-3">
                 <span class="text-muted" sec:authentication="name">Người dùng</span>

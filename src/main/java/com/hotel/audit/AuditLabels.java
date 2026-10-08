@@ -13,6 +13,7 @@ public final class AuditLabels {
             "Combo", "Combo dịch vụ",
             "DiscountCode", "Mã giảm giá",
             "Payment", "Thanh toán",
+            "Review", "Đánh giá",
             "User", "Tài khoản"
     );
 
@@ -61,6 +62,8 @@ public final class AuditLabels {
             Map.entry("amount", "Số tiền"),
             Map.entry("paymentMethod", "Phương thức"),
             Map.entry("paymentDate", "Ngày thanh toán"),
+            Map.entry("rating", "Số sao"),
+            Map.entry("comment", "Nhận xét"),
             Map.entry("createdAt", "Ngày tạo")
     );
 
