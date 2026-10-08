@@ -6,169 +6,172 @@
     <title>Giới thiệu | Khách sạn EAUT</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600;1,9..144,700&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link th:href="@{/css/eaut-theme.css}" rel="stylesheet">
     <style>
-        :root {
-            --gold: #f5c16c;
-            --gold-2: #ffdf9e;
-            --navy: #0a1a33;
-            --navy-2: #102a52;
-            --blue: #3b82f6;
-            --pink: #ec4899;
-            --violet: #8b5cf6;
-            --cyan: #22d3ee;
-        }
-        body { font-family: 'Be Vietnam Pro', system-ui, sans-serif; background: #070f1f; color: #e7ecf5; overflow-x: hidden; }
-        h1, h2, h3, .serif { font-family: 'Playfair Display', Georgia, serif; }
+        /* Phong cach "do van phong pham khach san" - dung chung bien mau voi /css/eaut-theme.css */
+        body { font-family: 'Be Vietnam Pro', system-ui, sans-serif; color: var(--ink); overflow-x: hidden;
+            background-color: var(--paper); background-image: radial-gradient(var(--dot) 1.3px, transparent 1.3px); background-size: 22px 22px; }
+        h1, h2, h3, .serif { font-family: 'Fraunces', Georgia, serif; color: var(--ink); }
         a { text-decoration: none; }
-        header.border-bottom { position: relative; z-index: 20; }
 
-        /* Thanh tien do cuon trang */
-        #scrollProgress { position: fixed; top: 0; left: 0; height: 3px; width: 0; z-index: 2000;
-            background: linear-gradient(90deg, var(--cyan), var(--violet), var(--pink), var(--gold)); box-shadow: 0 0 12px rgba(236,72,153,.7); }
+        #scrollProgress { position: fixed; top: 0; left: 0; height: 4px; width: 0; z-index: 2000; background: var(--baby-deep); }
 
-        /* ================= HERO ================= */
-        .hero { position: relative; min-height: 92vh; display: grid; place-items: center; overflow: hidden; isolation: isolate; }
-        .hero-bg { position: absolute; inset: -5%; background: url('/page-images/trangchu.jpg') center/cover; animation: kenburns 22s ease-in-out infinite alternate; z-index: -3; }
+        /* ================= HERO: tam buu thiep lon ================= */
+        .hero { position: relative; min-height: 86vh; margin: 1.5rem; display: grid; place-items: center; overflow: hidden; isolation: isolate;
+            border: var(--line); border-radius: 26px; box-shadow: 10px 10px 0 var(--baby); }
+        .hero-bg { position: absolute; inset: -5%; background: url('/page-images/trangchu.jpg') center/cover; z-index: -3; }
         .hero::before { content: ''; position: absolute; inset: 0; z-index: -2;
-            background: radial-gradient(ellipse at top, rgba(7,15,31,.35), rgba(7,15,31,.92) 70%), linear-gradient(180deg, rgba(7,15,31,.2), #070f1f); }
-        .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: .55; z-index: -1; mix-blend-mode: screen; }
-        .blob.b1 { width: 420px; height: 420px; background: var(--violet); top: 8%; left: -6%; animation: float1 14s ease-in-out infinite; }
-        .blob.b2 { width: 360px; height: 360px; background: var(--pink); bottom: 4%; right: -4%; animation: float2 16s ease-in-out infinite; }
-        .blob.b3 { width: 300px; height: 300px; background: var(--cyan); top: 40%; left: 55%; animation: float1 18s ease-in-out infinite reverse; opacity: .35; }
-        .sparkle { position: absolute; width: 4px; height: 4px; background: #fff; border-radius: 50%; box-shadow: 0 0 10px 2px rgba(255,255,255,.8); animation: twinkle 3s ease-in-out infinite; z-index: -1; }
+            background: linear-gradient(180deg, rgba(255,255,255,.80), rgba(255,255,255,.90) 60%, rgba(227,244,253,.95)); }
+        /* Con dau buu dien goc tren ben phai */
+        .hero::after { content: 'EAUT · HÀ NỘI · 2026'; position: absolute; top: 28px; right: 34px; width: 120px; height: 120px; border-radius: 50%;
+            display: grid; place-items: center; text-align: center; padding: 18px; font-size: .68rem; font-weight: 800; letter-spacing: .14em;
+            color: var(--baby-deep); border: 2.5px dashed var(--baby-deep); transform: rotate(14deg); opacity: .8; }
+        .blob, .sparkle, #sparkles { display: none; }
 
-        .badge-glass { display: inline-flex; align-items: center; gap: .5rem; padding: .5rem 1.1rem; border-radius: 99px;
-            background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(10px); font-size: .85rem; letter-spacing: .08em; }
-        .stars i { color: var(--gold); animation: starPop .6s backwards; }
-        .hero-title { font-size: clamp(2.8rem, 8vw, 6.2rem); font-weight: 800; line-height: 1.02; letter-spacing: -.02em; }
-        .gradient-text { background: linear-gradient(90deg, var(--gold-2), var(--pink), var(--violet), var(--cyan), var(--gold-2));
-            background-size: 300% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 7s linear infinite; }
-        .typing { color: var(--gold-2); border-right: 2px solid var(--gold-2); padding-right: 4px; animation: caret .8s step-end infinite; white-space: nowrap; }
+        .badge-glass { display: inline-flex; align-items: center; gap: .5rem; padding: .45rem 1rem; border-radius: 8px;
+            background: var(--paper); border: var(--line); box-shadow: 3px 3px 0 var(--baby); font-size: .8rem; font-weight: 700; letter-spacing: .08em;
+            transform: rotate(-1.5deg); }
+        .stars i { color: #f2b705; animation: starPop .6s backwards; }
+        .hero-title { font-size: clamp(2.6rem, 7.5vw, 5.6rem); font-weight: 700; line-height: 1.05; letter-spacing: -.02em; }
+        .gradient-text { color: var(--ink); font-style: italic; padding: 0 .1em;
+            background: linear-gradient(transparent 58%, var(--baby) 58%, var(--baby) 92%, transparent 92%); }
+        .typing { color: var(--baby-deep); font-weight: 700; border-right: 3px solid var(--ink); padding-right: 4px; animation: caret .8s step-end infinite; white-space: nowrap; }
 
-        .btn-glow { position: relative; overflow: hidden; border: 0; color: #1b1300; font-weight: 700; padding: .95rem 2rem; border-radius: 99px;
-            background: linear-gradient(135deg, var(--gold-2), var(--gold), #f59e0b); box-shadow: 0 10px 40px rgba(245,193,108,.45); transition: transform .25s, box-shadow .25s; }
-        .btn-glow::after { content: ''; position: absolute; top: 0; left: -120%; width: 60%; height: 100%;
-            background: linear-gradient(120deg, transparent, rgba(255,255,255,.75), transparent); transform: skewX(-20deg); animation: sweep 3.2s ease-in-out infinite; }
-        .btn-glow:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 16px 50px rgba(245,193,108,.65); color: #1b1300; }
-        .btn-ghost { border: 1px solid rgba(255,255,255,.35); color: #fff; padding: .95rem 2rem; border-radius: 99px; backdrop-filter: blur(8px); background: rgba(255,255,255,.05); transition: all .25s; }
-        .btn-ghost:hover { background: #fff; color: var(--navy); transform: translateY(-3px); }
-        .scroll-down { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); width: 28px; height: 46px; border: 2px solid rgba(255,255,255,.5); border-radius: 20px; }
-        .scroll-down::after { content: ''; position: absolute; left: 50%; top: 8px; width: 4px; height: 8px; margin-left: -2px; border-radius: 4px; background: #fff; animation: wheel 1.8s infinite; }
+        .btn-glow { border: var(--line); color: var(--ink); font-weight: 800; padding: .95rem 2rem; border-radius: 12px;
+            background: var(--baby); box-shadow: 5px 5px 0 var(--ink); transition: transform .12s, box-shadow .12s, background .15s; }
+        .btn-glow:hover { background: var(--baby-deep); color: var(--ink); transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--ink); }
+        .btn-ghost { border: var(--line); color: var(--ink); font-weight: 700; padding: .95rem 2rem; border-radius: 12px; background: var(--paper);
+            box-shadow: 4px 4px 0 var(--baby); transition: transform .12s, box-shadow .12s, background .15s; }
+        .btn-ghost:hover { background: var(--baby-soft); color: var(--ink); transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--baby-deep); }
+        .btn-glow:active, .btn-ghost:active { transform: translate(3px, 3px); box-shadow: 0 0 0 transparent; }
+        .scroll-down { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); width: 28px; height: 46px; border: 2px solid var(--ink); border-radius: 20px; }
+        .scroll-down::after { content: ''; position: absolute; left: 50%; top: 8px; width: 4px; height: 8px; margin-left: -2px; border-radius: 4px; background: var(--ink); animation: wheel 1.8s infinite; }
 
         /* ================= SECTION CHUNG ================= */
         section.block { position: relative; padding: 6rem 0; }
-        .eyebrow { color: var(--gold); text-transform: uppercase; letter-spacing: .25em; font-size: .8rem; font-weight: 600; }
-        .section-title { font-size: clamp(2rem, 4.5vw, 3.2rem); font-weight: 800; }
-        .muted { color: #9fb0c9; }
-        .divider { width: 80px; height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--gold), var(--pink)); }
+        .eyebrow { position: relative; display: inline-block; padding: .38rem 1rem .38rem 1.6rem; font-size: .76rem; font-weight: 700; letter-spacing: .12em;
+            text-transform: uppercase; color: var(--ink); background: var(--sun); border: var(--line);
+            clip-path: polygon(12px 0, 100% 0, 100% 100%, 12px 100%, 0 50%); transform: rotate(-2deg); }
+        .eyebrow::before { content: ''; position: absolute; left: 11px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px;
+            border-radius: 50%; background: var(--paper); border: 1.5px solid var(--ink); }
+        .section-title { font-size: clamp(2rem, 4.5vw, 3.1rem); font-weight: 700; line-height: 1.12; }
+        .muted { color: var(--ink-soft); }
+        .divider { width: 140px; height: 14px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='14' viewBox='0 0 140 14'%3E%3Cpath d='M2 8 C 20 2, 30 13, 48 7 S 78 2, 94 8 S 124 13, 138 5' fill='none' stroke='%235bb8e8' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat; }
 
-        .reveal { opacity: 0; transform: translateY(40px); transition: opacity .9s cubic-bezier(.2,.65,.3,1), transform .9s cubic-bezier(.2,.65,.3,1); }
-        .reveal.left { transform: translateX(-60px); }
-        .reveal.right { transform: translateX(60px); }
-        .reveal.zoom { transform: scale(.88); }
+        .reveal { opacity: 0; transform: translateY(30px); transition: opacity .7s ease, transform .7s ease; }
+        .reveal.left { transform: translateX(-40px); }
+        .reveal.right { transform: translateX(40px); }
+        .reveal.zoom { transform: scale(.94); }
         .reveal.in { opacity: 1; transform: none; }
 
-        /* ================= THONG KE ================= */
-        .stats { margin-top: -90px; position: relative; z-index: 5; }
-        .stat-card { border-radius: 22px; padding: 1.8rem 1rem; text-align: center; background: rgba(16,42,82,.55);
-            border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(16px); box-shadow: 0 20px 50px rgba(0,0,0,.35); transition: transform .35s; }
-        .stat-card:hover { transform: translateY(-8px); }
-        .stat-num { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 800; }
-        .stat-icon { width: 54px; height: 54px; margin: 0 auto .6rem; display: grid; place-items: center; border-radius: 16px; font-size: 1.5rem; color: #fff; }
+        /* ================= THONG KE: the chia khoa ================= */
+        .stats { margin-top: -70px; position: relative; z-index: 5; }
+        .stat-card { position: relative; border-radius: 14px 14px 14px 36px; padding: 1.6rem 1rem; text-align: center; background: var(--paper);
+            border: var(--line); box-shadow: var(--pop); transition: transform .2s, box-shadow .2s; }
+        .stat-card::before { content: ''; position: absolute; top: 12px; right: 12px; width: 12px; height: 12px; border-radius: 50%; border: var(--line); background: var(--baby-soft); }
+        .stat-card:hover { transform: translate(-3px, -3px); box-shadow: var(--pop-hover); }
+        .stat-num { font-family: 'Fraunces', serif; font-size: 2.7rem; font-weight: 700; }
+        .stat-icon { width: 50px; height: 50px; margin: 0 auto .6rem; display: grid; place-items: center; border-radius: 12px; font-size: 1.4rem;
+            background: var(--baby) !important; color: var(--ink); border: var(--line); }
 
-        /* ================= CAU CHUYEN ================= */
+        /* ================= CAU CHUYEN: anh polaroid ================= */
         .collage { position: relative; height: 520px; }
-        .collage img { position: absolute; object-fit: cover; border-radius: 24px; box-shadow: 0 30px 60px rgba(0,0,0,.5); border: 4px solid rgba(255,255,255,.08); }
-        .collage .c1 { width: 72%; height: 78%; top: 0; left: 0; animation: bob 7s ease-in-out infinite; }
-        .collage .c2 { width: 52%; height: 50%; bottom: 0; right: 0; animation: bob 7s ease-in-out infinite -3.5s; }
-        .collage .ring { position: absolute; width: 150px; height: 150px; border-radius: 50%; border: 2px dashed var(--gold); right: 8%; top: 6%; animation: spin 18s linear infinite; }
-        .experience { position: absolute; left: 6%; bottom: 8%; padding: 1rem 1.3rem; border-radius: 18px; background: linear-gradient(135deg, var(--pink), var(--violet)); box-shadow: 0 15px 40px rgba(139,92,246,.5); animation: bob 5s ease-in-out infinite -1s; }
+        .collage img { position: absolute; object-fit: cover; border-radius: 6px; background: var(--paper); border: 12px solid var(--paper);
+            border-bottom-width: 42px; outline: 1.5px solid var(--ink); box-shadow: 8px 8px 0 var(--baby); }
+        .collage .c1 { width: 70%; height: 78%; top: 0; left: 0; rotate: -3deg; animation: bob 7s ease-in-out infinite; }
+        .collage .c2 { width: 52%; height: 52%; bottom: 0; right: 0; rotate: 4deg; animation: bob 7s ease-in-out infinite -3.5s; }
+        .collage .ring { position: absolute; width: 130px; height: 130px; border-radius: 50%; border: 2.5px dashed var(--baby-deep); right: 6%; top: 4%; animation: spin 18s linear infinite; }
+        .experience { position: absolute; left: 6%; bottom: 10%; padding: .9rem 1.2rem; border-radius: 10px; background: var(--sun); color: var(--ink);
+            border: var(--line); box-shadow: 4px 4px 0 var(--ink); rotate: -4deg; animation: bob 5s ease-in-out infinite -1s; }
         .check-list li { list-style: none; margin-bottom: .8rem; display: flex; gap: .7rem; }
-        .check-list i { color: var(--gold); }
+        .check-list i { color: var(--baby-deep); }
 
         /* ================= TIEN ICH ================= */
-        .facilities { background: linear-gradient(180deg, #070f1f, #0b1834 50%, #070f1f); }
-        .feature { position: relative; height: 100%; padding: 2rem 1.6rem; border-radius: 24px; background: rgba(255,255,255,.04);
-            border: 1px solid rgba(255,255,255,.08); transition: transform .25s ease, background .3s; transform-style: preserve-3d; overflow: hidden; }
-        .feature::before { content: ''; position: absolute; inset: -2px; border-radius: 26px; padding: 2px; opacity: 0; transition: opacity .3s;
-            background: conic-gradient(from var(--ang, 0deg), var(--cyan), var(--violet), var(--pink), var(--gold), var(--cyan));
-            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: rotateAng 4s linear infinite; }
-        .feature:hover::before { opacity: 1; }
-        .feature:hover { background: rgba(255,255,255,.07); }
-        .feature .glow { position: absolute; width: 220px; height: 220px; border-radius: 50%; pointer-events: none; opacity: 0; transition: opacity .3s;
-            background: radial-gradient(circle, rgba(236,72,153,.35), transparent 70%); transform: translate(-50%, -50%); }
-        .feature:hover .glow { opacity: 1; }
-        .feature-icon { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 20px; font-size: 1.8rem; color: #fff; margin-bottom: 1.2rem; transition: transform .4s; }
-        .feature:hover .feature-icon { transform: translateZ(40px) rotate(-8deg) scale(1.1); }
-        @property --ang { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+        .facilities { background: var(--baby-soft); border-top: var(--line); border-bottom: var(--line); }
+        .feature { position: relative; height: 100%; padding: 2rem 1.6rem; border-radius: 14px; background: var(--paper);
+            border: var(--line); box-shadow: var(--pop); transition: transform .25s ease, box-shadow .25s; }
+        .feature:hover { box-shadow: var(--pop-hover); }
+        .feature .glow { display: none; }
+        .feature-icon { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 14px; font-size: 1.6rem; margin-bottom: 1.2rem;
+            background: var(--baby) !important; color: var(--ink); border: var(--line); transition: transform .3s; }
+        .feature:hover .feature-icon { transform: rotate(-8deg) scale(1.08); }
 
         /* ================= LOAI PHONG ================= */
-        .room-card { position: relative; border-radius: 26px; overflow: hidden; height: 100%; background: #0e1f3d; border: 1px solid rgba(255,255,255,.08); transition: transform .4s, box-shadow .4s; }
-        .room-card:hover { transform: translateY(-10px); box-shadow: 0 30px 60px rgba(59,130,246,.25); }
-        .room-card .thumb { height: 230px; background-size: cover; background-position: center; transition: transform .8s; }
-        .room-card:hover .thumb { transform: scale(1.12); }
-        .room-card .price { position: absolute; top: 18px; right: 18px; padding: .45rem .9rem; border-radius: 99px; font-weight: 700; color: #1b1300; background: linear-gradient(135deg, var(--gold-2), var(--gold)); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
-        .chip { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .75rem; border-radius: 99px; font-size: .8rem; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); }
+        .room-card { position: relative; border-radius: 14px; overflow: hidden; height: 100%; background: var(--paper);
+            border: var(--line); box-shadow: var(--pop); transition: transform .2s, box-shadow .2s; }
+        .room-card:hover { transform: translate(-3px, -3px); box-shadow: var(--pop-hover); }
+        .room-card > .overflow-hidden { margin: 10px 10px 0; border: var(--line); border-radius: 8px; }
+        .room-card .thumb { height: 220px; background-size: cover; background-position: center; transition: transform .6s; }
+        .room-card:hover .thumb { transform: scale(1.06); }
+        .room-card .price { position: absolute; top: 24px; right: 24px; padding: .3rem .9rem .3rem 1.1rem; font-weight: 800; color: var(--ink);
+            background: var(--sun); border: var(--line); border-radius: 4px;
+            -webkit-mask: radial-gradient(circle at 0 50%, transparent 6px, #000 6.5px); mask: radial-gradient(circle at 0 50%, transparent 6px, #000 6.5px); }
+        .chip { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .65rem; border-radius: 6px; font-size: .8rem; font-weight: 600;
+            background: var(--baby-soft); border: 1.5px solid var(--ink); }
 
-        /* ================= THU VIEN ANH ================= */
-        .gallery { columns: 3 260px; column-gap: 16px; }
-        .g-item { position: relative; break-inside: avoid; margin-bottom: 16px; border-radius: 20px; overflow: hidden; cursor: zoom-in; }
-        .g-item img { width: 100%; display: block; transition: transform .8s, filter .5s; }
-        .g-item::after { content: attr(data-caption); position: absolute; inset: auto 0 0 0; padding: 2.5rem 1.2rem 1rem; font-weight: 600;
-            background: linear-gradient(transparent, rgba(7,15,31,.92)); transform: translateY(100%); transition: transform .45s; }
-        .g-item:hover img { transform: scale(1.1) rotate(1deg); filter: saturate(1.25); }
-        .g-item:hover::after { transform: none; }
-        .lightbox { position: fixed; inset: 0; z-index: 3000; display: none; place-items: center; background: rgba(3,8,18,.92); backdrop-filter: blur(6px); }
+        /* ================= THU VIEN ANH: polaroid ghim tuong ================= */
+        .gallery { columns: 3 260px; column-gap: 22px; }
+        .g-item { position: relative; break-inside: avoid; margin-bottom: 22px; padding: 10px 10px 38px; background: var(--paper);
+            border: var(--line); border-radius: 6px; box-shadow: 5px 5px 0 var(--baby); cursor: zoom-in; transition: rotate .25s, box-shadow .25s; }
+        .g-item:nth-child(odd) { rotate: -1.5deg; }
+        .g-item:nth-child(even) { rotate: 1.5deg; }
+        .g-item:hover { rotate: 0deg; box-shadow: 8px 8px 0 var(--baby-deep); }
+        .g-item img { width: 100%; display: block; border-radius: 3px; }
+        .g-item::after { content: attr(data-caption); position: absolute; left: 0; right: 0; bottom: 8px; text-align: center;
+            font-family: 'Fraunces', serif; font-style: italic; font-size: .95rem; color: var(--ink); }
+        .lightbox { position: fixed; inset: 0; z-index: 3000; display: none; place-items: center; background: rgba(20, 54, 90, .88); }
         .lightbox.open { display: grid; animation: fadeIn .3s; }
-        .lightbox img { max-width: 92vw; max-height: 86vh; border-radius: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.7); animation: popIn .4s; }
+        .lightbox img { max-width: 92vw; max-height: 86vh; border: 12px solid #fff; border-radius: 6px; animation: popIn .4s; }
         .lightbox .close { position: absolute; top: 20px; right: 28px; font-size: 2rem; color: #fff; background: none; border: 0; }
 
-        /* ================= DANH GIA ================= */
-        .marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
-        .marquee-track { display: flex; gap: 20px; width: max-content; animation: marquee 40s linear infinite; }
+        /* ================= DANH GIA: giay ghi chu ================= */
+        .marquee { overflow: hidden; padding: 10px 0 18px; mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+        .marquee-track { display: flex; gap: 22px; width: max-content; animation: marquee 40s linear infinite; }
         .marquee:hover .marquee-track { animation-play-state: paused; }
-        .review { width: 340px; padding: 1.5rem; border-radius: 22px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); }
-        .avatar { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; color: #fff; }
+        .review { width: 330px; padding: 1.4rem; border-radius: 12px; background: var(--paper); border: var(--line); box-shadow: 5px 5px 0 var(--baby); }
+        .review:nth-child(3n+2) { background: #fffbea; }
+        .avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; color: var(--ink);
+            background: var(--baby) !important; border: var(--line); }
 
         /* ================= LIEN HE ================= */
-        .contact-card { border-radius: 28px; overflow: hidden; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); }
-        .contact-line { display: flex; gap: 1rem; align-items: center; padding: 1rem 0; border-bottom: 1px dashed rgba(255,255,255,.12); }
-        .contact-line .ic { width: 48px; height: 48px; flex: 0 0 48px; display: grid; place-items: center; border-radius: 14px; background: linear-gradient(135deg, var(--blue), var(--violet)); font-size: 1.2rem; }
-        .map { width: 100%; height: 100%; min-height: 360px; border: 0; filter: grayscale(.2) contrast(1.05); }
+        .contact-card { border-radius: 16px; overflow: hidden; background: var(--paper); border: var(--line); box-shadow: 8px 8px 0 var(--baby); }
+        .contact-card .text-white { color: var(--ink) !important; }
+        .contact-line { display: flex; gap: 1rem; align-items: center; padding: 1rem 0; border-bottom: 1.5px dashed var(--baby-deep); }
+        .contact-line .ic { width: 46px; height: 46px; flex: 0 0 46px; display: grid; place-items: center; border-radius: 12px;
+            background: var(--baby); border: var(--line); font-size: 1.15rem; color: var(--ink); }
+        .map { width: 100%; height: 100%; min-height: 360px; border: 0; border-left: var(--line); }
 
-        .cta { border-radius: 32px; padding: 4rem 2rem; text-align: center; position: relative; overflow: hidden;
-            background: linear-gradient(120deg, #7c3aed, #db2777, #f59e0b, #06b6d4); background-size: 300% 300%; animation: gradientMove 10s ease infinite; }
-        .cta::before { content: ''; position: absolute; inset: 0; background: url('/page-images/phongProMax.jpg') center/cover; opacity: .15; mix-blend-mode: overlay; }
+        /* ================= CTA: tam ve lon ================= */
+        .cta { position: relative; border-radius: 18px; padding: 4rem 2rem; text-align: center; overflow: hidden; color: var(--ink);
+            background-color: var(--baby); background-image: radial-gradient(rgba(20, 54, 90, .14) 1.3px, transparent 1.3px); background-size: 18px 18px;
+            border: var(--line); box-shadow: 10px 10px 0 var(--ink); }
+        .cta h2 { color: var(--ink); }
+        .cta .btn-light { background: var(--ink); color: var(--paper); border: var(--line); border-radius: 12px !important; box-shadow: 5px 5px 0 var(--paper); }
+        .cta .btn-light:hover { background: #0d2742; color: var(--paper); transform: translate(-2px, -2px); }
+        .cta .text-warning { color: var(--sun) !important; }
 
-        footer.bg-dark { margin-top: 0 !important; }
+        footer.bg-dark { margin-top: 2rem !important; }
 
         /* ================= KEYFRAMES ================= */
-        @keyframes kenburns { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.15) translate(-2%, -2%); } }
-        @keyframes float1 { 0%,100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(80px, 60px) scale(1.15); } }
-        @keyframes float2 { 0%,100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-90px, -50px) scale(1.1); } }
-        @keyframes twinkle { 0%,100% { opacity: .1; transform: scale(.6); } 50% { opacity: 1; transform: scale(1.3); } }
-        @keyframes shine { to { background-position: 300% center; } }
         @keyframes caret { 50% { border-color: transparent; } }
-        @keyframes sweep { 0% { left: -120%; } 55%,100% { left: 140%; } }
         @keyframes wheel { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(16px); } }
         @keyframes starPop { from { opacity: 0; transform: scale(0) rotate(-90deg); } }
-        @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+        @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes rotateAng { to { --ang: 360deg; } }
         @keyframes marquee { to { transform: translateX(-50%); } }
-        @keyframes gradientMove { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
         @keyframes fadeIn { from { opacity: 0; } }
         @keyframes popIn { from { transform: scale(.85); opacity: 0; } }
 
-        @media (max-width: 991px) { .collage { height: 400px; margin-bottom: 2rem; } .stats { margin-top: -60px; } }
+        @media (max-width: 991px) { .collage { height: 400px; margin-bottom: 2rem; } .stats { margin-top: -50px; } .hero { margin: .75rem; } .hero::after { display: none; } }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation: none !important; transition: none !important; }
             .reveal { opacity: 1; transform: none; }
         }
     </style>
 </head>
-<body>
+<body class="eaut-chrome">
 <div id="scrollProgress"></div>
 <div th:replace="~{fragments/header :: header}"></div>
 
