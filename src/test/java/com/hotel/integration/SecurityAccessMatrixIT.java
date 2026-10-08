@@ -51,14 +51,18 @@ class SecurityAccessMatrixIT extends ItFixtures {
             "/admin/bookings/walk-in/new,ANONYMOUS,Chuyển về /admin", "/admin/bookings/walk-in/new,CUSTOMER,403 Forbidden",
             "/admin/bookings/walk-in/new,STAFF,200 OK", "/admin/bookings/walk-in/new,ADMIN,200 OK",
             "/staff/bookings,ANONYMOUS,Chuyển về /admin", "/staff/bookings,CUSTOMER,403 Forbidden", "/staff/bookings,STAFF,200 OK", "/staff/bookings,ADMIN,200 OK",
-            // Chỉ ADMIN được tạo mới danh mục
-            "/admin/room-types/new,ANONYMOUS,Chuyển về /admin", "/admin/room-types/new,CUSTOMER,403 Forbidden", "/admin/room-types/new,STAFF,403 Forbidden", "/admin/room-types/new,ADMIN,200 OK",
-            "/admin/rooms/new,ANONYMOUS,Chuyển về /admin", "/admin/rooms/new,CUSTOMER,403 Forbidden", "/admin/rooms/new,STAFF,403 Forbidden", "/admin/rooms/new,ADMIN,200 OK",
-            "/admin/combos/new,ANONYMOUS,Chuyển về /admin", "/admin/combos/new,CUSTOMER,403 Forbidden", "/admin/combos/new,STAFF,403 Forbidden", "/admin/combos/new,ADMIN,200 OK",
+            // STAFF có mọi quyền như ADMIN, kể cả tạo mới danh mục
+            "/admin/room-types/new,ANONYMOUS,Chuyển về /admin", "/admin/room-types/new,CUSTOMER,403 Forbidden", "/admin/room-types/new,STAFF,200 OK", "/admin/room-types/new,ADMIN,200 OK",
+            "/admin/rooms/new,ANONYMOUS,Chuyển về /admin", "/admin/rooms/new,CUSTOMER,403 Forbidden", "/admin/rooms/new,STAFF,200 OK", "/admin/rooms/new,ADMIN,200 OK",
+            "/admin/combos/new,ANONYMOUS,Chuyển về /admin", "/admin/combos/new,CUSTOMER,403 Forbidden", "/admin/combos/new,STAFF,200 OK", "/admin/combos/new,ADMIN,200 OK",
             "/admin/discount-codes/new,ANONYMOUS,Chuyển về /admin", "/admin/discount-codes/new,CUSTOMER,403 Forbidden",
-            "/admin/discount-codes/new,STAFF,403 Forbidden", "/admin/discount-codes/new,ADMIN,200 OK",
-            // Khu vực quản lý nhân viên - chỉ ADMIN
-            "/admin/staff-accounts,STAFF,403 Forbidden", "/admin/staff-accounts,CUSTOMER,403 Forbidden"})
+            "/admin/discount-codes/new,STAFF,200 OK", "/admin/discount-codes/new,ADMIN,200 OK",
+            // Khu vực quản lý nhân viên và nhật ký thao tác - chỉ ADMIN
+            "/admin/staff-accounts,ANONYMOUS,Chuyển về /admin", "/admin/staff-accounts,CUSTOMER,403 Forbidden",
+            "/admin/staff-accounts,STAFF,403 Forbidden", "/admin/staff-accounts,ADMIN,200 OK",
+            "/admin/staff-accounts/new,STAFF,403 Forbidden", "/admin/staff-accounts/new,ADMIN,200 OK",
+            "/admin/audit-logs,ANONYMOUS,Chuyển về /admin", "/admin/audit-logs,CUSTOMER,403 Forbidden",
+            "/admin/audit-logs,STAFF,403 Forbidden", "/admin/audit-logs,ADMIN,200 OK"})
     void accessMatrix(String path, String role, String expected) throws Exception {
         var result = mockMvc.perform(withRole(get(path), role));
         switch (expected) {
@@ -81,8 +85,9 @@ class SecurityAccessMatrixIT extends ItFixtures {
 
     @TcSteps("Gửi POST hợp lệ có CSRF token nhưng vai trò không đủ quyền")
     @ParameterizedTest(name = "Chặn thao tác ghi khi không đủ quyền ¦ POST {0} với vai trò {1} (có CSRF) ¦ {2}")
-    @CsvSource({"/admin/rooms/new,STAFF,403 Forbidden", "/admin/room-types/new,STAFF,403 Forbidden", "/admin/combos/new,STAFF,403 Forbidden",
-            "/admin/discount-codes/new,STAFF,403 Forbidden", "/admin/bookings/1/confirm,CUSTOMER,403 Forbidden",
+    @CsvSource({"/admin/staff-accounts/new,STAFF,403 Forbidden", "/admin/staff-accounts/1/edit,STAFF,403 Forbidden",
+            "/admin/staff-accounts/1/toggle-lock,STAFF,403 Forbidden", "/admin/customers/1/toggle-lock,CUSTOMER,403 Forbidden",
+            "/admin/bookings/1/confirm,CUSTOMER,403 Forbidden",
             "/admin/rooms/1/delete,CUSTOMER,403 Forbidden", "/admin/bookings/1/confirm,ANONYMOUS,Chuyển về /admin"})
     void writeRequiresRole(String path, String role, String expected) throws Exception {
         var result = mockMvc.perform(withRole(post(path).with(csrf()), role));

@@ -10,11 +10,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -59,6 +61,12 @@ public class SecurityConfig {
         };
     }
 
+    // Tai khoan bi khoa -> bao rieng "?locked=true", con lai (sai email/mat khau) -> "?error=true"
+    private AuthenticationFailureHandler loginFailureHandler(String loginPage) {
+        return (request, response, exception) -> response.sendRedirect(request.getContextPath() + loginPage
+                + (exception instanceof LockedException ? "?locked=true" : "?error=true"));
+    }
+
     // Cong danh cho STAFF va ADMIN - trang dang nhap tai /admin
     // Phai dat @Order(1) de duoc xet truoc chain con lai (pham vi hep hon: /admin/**, /staff/**)
     @Bean
@@ -71,13 +79,10 @@ public class SecurityConfig {
                         // /admin la diem vao duy nhat hien trang dang nhap quan tri.
                         // /admin/login chi la endpoint POST do Spring Security xu ly.
                         .requestMatchers("/admin", "/admin/login").permitAll()
-                        // Khu vuc quan ly nhan vien (chua xay dung) - chi danh rieng cho ADMIN
-                        .requestMatchers("/admin/staff-accounts/**").hasRole("ADMIN")
-                        // STAFF khong duoc TAO MOI loai phong, phong, combo, ma giam gia - chi ADMIN moi tao duoc
-                        // (STAFF van xem/sua/xoa/doi trang thai binh thuong vi khong khop pattern "/new" nay)
-                        .requestMatchers("/admin/room-types/new", "/admin/rooms/new",
-                                "/admin/combos/new", "/admin/discount-codes/new").hasRole("ADMIN")
-                        // STAFF co quyen nhu ADMIN o cac hanh dong con lai (xem, sua, xoa, doi trang thai, doanh thu...)
+                        // Quan ly tai khoan nhan vien va xem nhat ky thao tac - chi danh rieng cho ADMIN
+                        .requestMatchers("/admin/staff-accounts", "/admin/staff-accounts/**",
+                                "/admin/audit-logs", "/admin/audit-logs/**").hasRole("ADMIN")
+                        // STAFF co moi quyen nhu ADMIN o cac chuc nang con lai (them/sua/xoa phong, combo, ma giam gia, doanh thu...)
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers("/staff/**").hasAnyRole("STAFF", "ADMIN")
                         .anyRequest().authenticated()
@@ -86,7 +91,7 @@ public class SecurityConfig {
                         .loginPage("/admin")
                         .loginProcessingUrl("/admin/login")
                         .successHandler(new AdminPortalSuccessHandler())
-                        .failureUrl("/admin?error=true")
+                        .failureHandler(loginFailureHandler("/admin"))
                         .permitAll()
                 )
                 .logout(logout -> logout
@@ -125,7 +130,7 @@ public class SecurityConfig {
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
                         .successHandler(new CustomerPortalSuccessHandler())
-                        .failureUrl("/login?error=true")
+                        .failureHandler(loginFailureHandler("/login"))
                         .permitAll()
                 )
                 .logout(logout -> logout

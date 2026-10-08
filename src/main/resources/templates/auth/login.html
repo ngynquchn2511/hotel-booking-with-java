@@ -27,6 +27,7 @@
             </div>
             <div th:if="${param.error}" class="alert alert-danger border-0 rounded-3 small">Email hoặc mật khẩu không đúng.</div>
             <div th:if="${param.error != null and param.error[0] == 'wrong_portal'}" class="alert alert-danger border-0 rounded-3 small">Tài khoản này không phải tài khoản khách hàng. Vui lòng dùng cổng quản trị.</div>
+            <div th:if="${param.locked}" class="alert alert-danger border-0 rounded-3 small">Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.</div>
             <div th:if="${param.logout}" class="alert alert-success border-0 rounded-3 small">Bạn đã đăng xuất thành công.</div>
             <div th:if="${param.registered}" class="alert alert-success border-0 rounded-3 small">Đăng ký thành công. Hãy đăng nhập để tiếp tục.</div>
             <div th:if="${param.reset}" class="alert alert-success border-0 rounded-3 small">Đặt lại mật khẩu thành công. Hãy đăng nhập bằng mật khẩu mới.</div>

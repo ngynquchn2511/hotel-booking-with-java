@@ -50,6 +50,11 @@ public class User {
     @Column(name = "reset_token_expiry")
     private LocalDateTime resetTokenExpiry;
 
+    // Tai khoan bi khoa thi khong dang nhap duoc. De kieu Boolean (cho phep null = khong khoa) de khi
+    // ddl-auto=update them cot moi vao bang da co du lieu, cac tai khoan cu khong bi khoa nham
+    @Column(name = "locked")
+    private Boolean locked;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -59,5 +64,9 @@ public class User {
         if (this.customerType == null) {
             this.customerType = CustomerType.NEW;
         }
+    }
+
+    public boolean isLocked() {
+        return Boolean.TRUE.equals(locked);
     }
 }

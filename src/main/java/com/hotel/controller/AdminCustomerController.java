@@ -37,4 +37,10 @@ public class AdminCustomerController {
         customerManagementService.updateCustomerType(id, customerType);
         return "redirect:/admin/customers";
     }
+
+    @PostMapping("/{id}/toggle-lock")
+    public String toggleLock(@PathVariable Long id) {
+        customerManagementService.toggleLocked(id);
+        return "redirect:/admin/customers";
+    }
 }

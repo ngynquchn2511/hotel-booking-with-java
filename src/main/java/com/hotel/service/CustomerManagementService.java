@@ -42,6 +42,16 @@ public class CustomerManagementService {
         userRepository.save(user);
     }
 
+    @Transactional
+    public void toggleLocked(Long id) {
+        User user = findById(id);
+        if (user.getRole() != UserRole.CUSTOMER) {
+            throw new BusinessException("Chỉ có thể khóa/mở khóa tài khoản CUSTOMER tại đây");
+        }
+        user.setLocked(!user.isLocked());
+        userRepository.save(user);
+    }
+
     // Dung khi nhan vien dat phong tai quay cho khach vang lai chua co tai khoan.
     // Tim theo SDT truoc, neu chua co thi tao tai khoan moi voi mat khau ngau nhien (khach co the dang ky lai sau de dat mat khau rieng)
     @Transactional

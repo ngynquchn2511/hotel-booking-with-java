@@ -2,14 +2,17 @@ package com.hotel.controller;
 
 import com.hotel.entity.Booking;
 import com.hotel.entity.BookingStatus;
+import com.hotel.entity.PaymentMethod;
 import com.hotel.exception.BusinessException;
 import com.hotel.service.BookingService;
+import com.hotel.service.PaymentService;
 import com.hotel.util.PaginationUtil;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Controller
@@ -17,9 +20,11 @@ import java.util.List;
 public class AdminBookingController {
 
     private final BookingService bookingService;
+    private final PaymentService paymentService;
 
-    public AdminBookingController(BookingService bookingService) {
+    public AdminBookingController(BookingService bookingService, PaymentService paymentService) {
         this.bookingService = bookingService;
+        this.paymentService = paymentService;
     }
 
     // Danh sach toan bo booking - dung lam "lich su dat phong" va man hinh check-in/check-out cho STAFF/ADMIN
@@ -45,6 +50,7 @@ public class AdminBookingController {
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         model.addAttribute("booking", bookingService.findByIdAndMarkSeenByStaff(id));
+        model.addAttribute("payment", paymentService.findByBookingId(id).orElse(null));
         return "admin/bookings/detail";
     }
 
@@ -68,14 +74,65 @@ public class AdminBookingController {
         return "redirect:/admin/bookings/" + id;
     }
 
+    // Man hinh check-out: chon phuong thuc thanh toan (tien mat / chuyen khoan QR / the) truoc khi tra phong
+    @GetMapping("/{id}/check-out")
+    public String checkOutForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        Booking booking = bookingService.findById(id);
+        if (booking.getStatus() != BookingStatus.CHECKED_IN) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Chỉ có thể check-out đơn đã check-in (CHECKED_IN)");
+            return "redirect:/admin/bookings/" + id;
+        }
+        model.addAttribute("booking", booking);
+        model.addAttribute("nights", ChronoUnit.DAYS.between(booking.getCheckInDate(), booking.getCheckOutDate()));
+        model.addAttribute("paid", paymentService.isPaid(id));
+        model.addAttribute("qrUrl", paymentService.buildQrUrl(booking));
+        model.addAttribute("transferContent", paymentService.transferContent(booking));
+        model.addAttribute("bankId", paymentService.getBankId());
+        model.addAttribute("accountNo", paymentService.getAccountNo());
+        model.addAttribute("accountName", paymentService.getAccountName());
+        return "admin/bookings/checkout";
+    }
+
+    // Khong gui phuong thuc thanh toan -> mac dinh tien mat (thu tai quay)
     @PostMapping("/{id}/check-out")
-    public String checkOut(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String checkOut(@PathVariable Long id,
+                           @RequestParam(defaultValue = "CASH") PaymentMethod paymentMethod,
+                           RedirectAttributes redirectAttributes) {
         try {
-            bookingService.checkOut(id);
+            paymentService.checkOutWithPayment(id, paymentMethod);
+            redirectAttributes.addFlashAttribute("successMessage", "Check-out thành công. Bạn có thể xuất hóa đơn cho khách.");
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            // Don van dang o (chua tra phong) -> quay lai man hinh thanh toan de chon lai phuong thuc
+            if (bookingService.findById(id).getStatus() == BookingStatus.CHECKED_IN) {
+                return "redirect:/admin/bookings/" + id + "/check-out";
+            }
+        }
+        return "redirect:/admin/bookings/" + id;
+    }
+
+    // Nhan vien kiem tra app ngan hang thay tien da vao -> bam xac nhan, QR chuyen sang "thanh cong"
+    @PostMapping("/{id}/confirm-transfer")
+    public String confirmTransfer(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            paymentService.confirmBankTransfer(id);
         } catch (BusinessException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
-        return "redirect:/admin/bookings/" + id;
+        return "redirect:/admin/bookings/" + id + "/check-out?method=BANK_TRANSFER";
+    }
+
+    // Hoa don thanh toan - trang in rieng, bam "In / Lưu PDF" de xuat file
+    @GetMapping("/{id}/invoice")
+    public String invoice(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            model.addAllAttributes(paymentService.buildInvoiceData(bookingService.findById(id)));
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            return "redirect:/admin/bookings/" + id;
+        }
+        model.addAttribute("backUrl", "/admin/bookings/" + id);
+        return "admin/bookings/invoice";
     }
 
     @PostMapping("/{id}/cancel")

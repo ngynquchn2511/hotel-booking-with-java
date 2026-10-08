@@ -30,6 +30,8 @@
                     <th>Số điện thoại</th>
                     <th>Loại khách hàng</th>
                     <th>Ngày đăng ký</th>
+                    <th>Trạng thái</th>
+                    <th></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -46,6 +48,18 @@
                         </form>
                     </td>
                     <td th:text="${#temporals.format(c.createdAt, 'dd/MM/yyyy')}"></td>
+                    <td>
+                        <span class="badge" th:classappend="${c.isLocked()} ? 'bg-danger' : 'bg-success'"
+                              th:text="${c.isLocked()} ? 'Đã khóa' : 'Hoạt động'"></span>
+                    </td>
+                    <td class="text-end">
+                        <form th:action="@{/admin/customers/{id}/toggle-lock(id=${c.id})}" method="post" class="d-inline"
+                              onsubmit="return confirm('Xác nhận thay đổi trạng thái khóa của tài khoản này?')">
+                            <button type="submit" class="btn btn-sm"
+                                    th:classappend="${c.isLocked()} ? 'btn-outline-success' : 'btn-outline-danger'"
+                                    th:text="${c.isLocked()} ? 'Mở khóa' : 'Khóa'"></button>
+                        </form>
+                    </td>
                 </tr>
                 </tbody>
             </table>

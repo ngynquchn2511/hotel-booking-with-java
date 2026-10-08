@@ -19,6 +19,7 @@
             <a th:href="@{/admin/bookings}" class="d-inline-block mb-3">&laquo; Quay lại danh sách</a>
 
             <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
 
             <div class="bg-white p-4 rounded shadow-sm mb-4">
                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -48,6 +49,13 @@
                     (giảm <span th:text="${#numbers.formatDecimal(booking.discountAmount, 1, 0)} + 'VND'"></span>)
                 </p>
                 <p class="fw-bold fs-5 mb-0">Tổng tiền: <span th:text="${#numbers.formatDecimal(booking.totalAmount, 1, 0)} + 'VND'"></span></p>
+                <p class="mb-0 mt-2" th:if="${payment != null}">
+                    <span th:class="'badge ' + (${payment.status.name() == 'PAID'} ? 'bg-success' : 'bg-secondary')"
+                          th:text="${payment.status.vietnameseLabel}"></span>
+                    — <span th:text="${payment.paymentMethod.vietnameseLabel}"></span>
+                    <span class="text-muted" th:if="${payment.paymentDate != null}"
+                          th:text="'(' + ${#temporals.format(payment.paymentDate, 'dd/MM/yyyy HH:mm')} + ')'"></span>
+                </p>
             </div>
 
             <div class="bg-white p-4 rounded shadow-sm">
@@ -61,9 +69,11 @@
                     <button type="submit" class="btn btn-success">Check-in</button>
                 </form>
 
-                <form th:if="${booking.status.name() == 'CHECKED_IN'}" th:action="@{/admin/bookings/{id}/check-out(id=${booking.id})}" method="post" class="d-inline">
-                    <button type="submit" class="btn btn-warning">Check-out</button>
-                </form>
+                <a th:if="${booking.status.name() == 'CHECKED_IN'}" th:href="@{/admin/bookings/{id}/check-out(id=${booking.id})}"
+                   class="btn btn-warning">Check-out &amp; thanh toán</a>
+
+                <a th:if="${payment != null and payment.status.name() == 'PAID'}" th:href="@{/admin/bookings/{id}/invoice(id=${booking.id})}"
+                   target="_blank" class="btn btn-outline-primary">Xuất hóa đơn</a>
 
                 <form th:if="${booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED'}"
                       th:action="@{/admin/bookings/{id}/cancel(id=${booking.id})}" method="post" class="d-inline"

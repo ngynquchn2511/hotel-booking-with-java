@@ -1,8 +1,10 @@
 package com.hotel.controller;
 
 import com.hotel.entity.BookingStatus;
+import com.hotel.entity.PaymentMethod;
 import com.hotel.entity.RoomStatus;
 import com.hotel.service.BookingService;
+import com.hotel.service.PaymentService;
 import com.hotel.service.RoomService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -24,10 +26,12 @@ public class AdminController {
 
     private final RoomService roomService;
     private final BookingService bookingService;
+    private final PaymentService paymentService;
 
-    public AdminController(RoomService roomService, BookingService bookingService) {
+    public AdminController(RoomService roomService, BookingService bookingService, PaymentService paymentService) {
         this.roomService = roomService;
         this.bookingService = bookingService;
+        this.paymentService = paymentService;
     }
 
     @GetMapping("/admin/dashboard")
@@ -82,6 +86,12 @@ public class AdminController {
         Map<String, BigDecimal> revenueTrend = bookingService.getRevenueTrend(fromDate, toDate);
         model.addAttribute("trendLabels", new ArrayList<>(revenueTrend.keySet()));
         model.addAttribute("trendData", new ArrayList<>(revenueTrend.values()));
+
+        // Tien thuc te da thu khi check-out (theo ngay thanh toan), chia theo phuong thuc
+        Map<PaymentMethod, BigDecimal> paidByMethod = paymentService.getPaidRevenueByMethod(fromDate, toDate);
+        model.addAttribute("paidTotal", paidByMethod.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add));
+        model.addAttribute("paidCash", paidByMethod.get(PaymentMethod.CASH));
+        model.addAttribute("paidTransfer", paidByMethod.get(PaymentMethod.BANK_TRANSFER));
 
         return "admin/dashboard";
     }

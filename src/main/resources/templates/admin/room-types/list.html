@@ -18,7 +18,7 @@
         <div class="col-md-9">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3 class="fw-bold m-0">Danh sách loại phòng</h3>
-                <a th:href="@{/admin/room-types/new}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">Thêm loại phòng</a>
+                <a th:href="@{/admin/room-types/new}" class="btn btn-primary">Thêm loại phòng</a>
             </div>
 
             <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>

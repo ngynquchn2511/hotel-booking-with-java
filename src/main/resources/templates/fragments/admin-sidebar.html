@@ -1,4 +1,4 @@
-<nav th:fragment="sidebar" class="list-group">
+<nav th:fragment="sidebar" class="list-group" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <a th:href="@{/admin/dashboard}" class="list-group-item list-group-item-action">Tổng quan</a>
     <a th:href="@{/admin/bookings}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
         Đặt phòng / Check-in-out
@@ -10,4 +10,6 @@
     <a th:href="@{/admin/rooms}" class="list-group-item list-group-item-action">Phòng</a>
     <a th:href="@{/admin/combos}" class="list-group-item list-group-item-action">Combo dịch vụ</a>
     <a th:href="@{/admin/discount-codes}" class="list-group-item list-group-item-action">Mã giảm giá</a>
+    <a th:href="@{/admin/staff-accounts}" class="list-group-item list-group-item-action" sec:authorize="hasRole('ADMIN')">Tài khoản nhân viên</a>
+    <a th:href="@{/admin/audit-logs}" class="list-group-item list-group-item-action" sec:authorize="hasRole('ADMIN')">Nhật ký thao tác</a>
 </nav>

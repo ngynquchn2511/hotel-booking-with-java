@@ -21,6 +21,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByRoomIdAndStatusIn(Long roomId, List<BookingStatus> statuses);
 
+    // Moi khach chi duoc dung 1 ma giam gia 1 lan - don da huy (CANCELLED) thi khong tinh, khach dung lai duoc
+    boolean existsByCustomerIdAndDiscountCodeIdAndStatusNot(Long customerId, Long discountCodeId, BookingStatus status);
+
     // BR-01: kiem tra phong da co booking trung khoang ngay chua (dung khi tao booking moi)
     // Cong thuc trung lich: existing.checkIn < newCheckOut AND existing.checkOut > newCheckIn
     @Query("""

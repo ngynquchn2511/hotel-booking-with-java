@@ -165,7 +165,7 @@ class SystemParamST extends StBase {
 
     @TcSteps("Đăng nhập thật bằng vai trò R, mở trang không thuộc quyền của vai trò đó")
     @ParameterizedTest(name = "{1} mở trang {0} ¦ phiên đăng nhập {1}, GET {0} ¦ HTTP 403 Forbidden")
-    @CsvSource({"/admin/rooms/new,STAFF", "/admin/combos/new,STAFF", "/admin/discount-codes/new,STAFF", "/admin/room-types/new,STAFF",
+    @CsvSource({"/admin/staff-accounts,STAFF", "/admin/staff-accounts/new,STAFF", "/admin/audit-logs,STAFF",
             "/admin/dashboard,CUSTOMER", "/admin/bookings,CUSTOMER", "/admin/rooms,CUSTOMER", "/customer/bookings,STAFF"})
     void forbiddenPages(String path, UserRole role) {
         Browser b = new Browser();

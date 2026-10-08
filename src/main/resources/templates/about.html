@@ -261,7 +261,7 @@
 </section>
 
 <!-- ================= TIEN ICH ================= -->
-<section class="block facilities">
+<section class="block facilities" id="tien-ich">
     <div class="container">
         <div class="text-center mb-5 reveal">
             <div class="eyebrow mb-2">Tiện ích</div>
@@ -309,7 +309,7 @@
 </section>
 
 <!-- ================= LOAI PHONG (du lieu that) ================= -->
-<section class="block" th:if="${!#lists.isEmpty(roomTypes)}">
+<section class="block" id="hang-phong" th:if="${!#lists.isEmpty(roomTypes)}">
     <div class="container">
         <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-5 reveal">
             <div>
@@ -324,7 +324,7 @@
                     <div class="overflow-hidden">
                         <div class="thumb" th:style="'background-image:url(/page-images/' + ${ {'anhphonggiuongdoi.jpg','anhphongVIP.jpg','phongProMax.jpg','phongpromax2.jpg','anhphonggiuongdoi2.jpg','danhsachphong.jpg'}[st.index % 6] } + ')'"></div>
                     </div>
-                    <div class="price"><span th:text="${#numbers.formatDecimal(rt.basePrice, 1, 0)}">0</span> đ</div>
+                    <div class="price"><span th:text="${#numbers.formatDecimal(rt.basePrice, 1, 'POINT', 0, 'COMMA')}">0</span> đ</div>
                     <div class="p-4">
                         <h3 class="h4 fw-bold mb-2" th:text="${rt.name}">Loại phòng</h3>
                         <p class="muted small mb-3" th:text="${rt.description != null and !#strings.isEmpty(rt.description) ? #strings.abbreviate(rt.description, 110) : 'Không gian nghỉ ngơi thoải mái, đầy đủ tiện nghi.'}">Mô tả</p>

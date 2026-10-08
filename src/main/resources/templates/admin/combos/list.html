@@ -18,7 +18,7 @@
         <div class="col-md-9">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3 class="fw-bold m-0">Danh sách combo</h3>
-                <a th:href="@{/admin/combos/new}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">Thêm combo</a>
+                <a th:href="@{/admin/combos/new}" class="btn btn-primary">Thêm combo</a>
             </div>
 
             <div th:if="${#lists.isEmpty(combos)}" class="alert alert-info">

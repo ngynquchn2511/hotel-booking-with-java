@@ -10,6 +10,7 @@ import com.hotel.service.BookingService;
 import com.hotel.service.ComboService;
 import com.hotel.service.CustomerManagementService;
 import com.hotel.service.DiscountCodeService;
+import com.hotel.service.PaymentService;
 import com.hotel.service.RoomService;
 import com.hotel.util.PaginationUtil;
 import jakarta.validation.Valid;
@@ -42,15 +43,18 @@ public class CustomerBookingController {
     private final ComboService comboService;
     private final DiscountCodeService discountCodeService;
     private final CustomerManagementService customerManagementService;
+    private final PaymentService paymentService;
 
     public CustomerBookingController(BookingService bookingService, RoomService roomService,
                                       ComboService comboService, DiscountCodeService discountCodeService,
-                                      CustomerManagementService customerManagementService) {
+                                      CustomerManagementService customerManagementService,
+                                      PaymentService paymentService) {
         this.bookingService = bookingService;
         this.roomService = roomService;
         this.comboService = comboService;
         this.discountCodeService = discountCodeService;
         this.customerManagementService = customerManagementService;
+        this.paymentService = paymentService;
     }
 
     // Danh sach lich su dat phong - chi danh cho khach hang DA dang nhap (khach vang lai khong co lich su)
@@ -59,7 +63,9 @@ public class CustomerBookingController {
                            @RequestParam(defaultValue = "1") int page, Model model) {
         List<Booking> all = bookingService.findAllForCustomer(userDetails.getUser().getId());
         int totalPages = PaginationUtil.totalPages(all.size(), PaginationUtil.DEFAULT_PAGE_SIZE);
-        model.addAttribute("bookings", PaginationUtil.slice(all, page, PaginationUtil.DEFAULT_PAGE_SIZE));
+        List<Booking> pageBookings = PaginationUtil.slice(all, page, PaginationUtil.DEFAULT_PAGE_SIZE);
+        model.addAttribute("bookings", pageBookings);
+        model.addAttribute("payments", paymentService.findByBookings(pageBookings));
         model.addAttribute("currentPage", Math.max(1, Math.min(page, totalPages)));
         model.addAttribute("totalPages", totalPages);
         model.addAttribute("pageNumbers", PaginationUtil.pageNumbersToShow(page, totalPages));
@@ -175,6 +181,10 @@ public class CustomerBookingController {
                     : CustomerType.NEW;
 
             BigDecimal discountAmount = discountCodeService.validateAndCalculateDiscount(code, customerType, subtotal);
+            // Khach vang lai chua biet la ai (chua nhap email) - se duoc kiem tra lai khi bam Xac nhan dat phong
+            if (userDetails != null && bookingService.hasUsedDiscountCode(userDetails.getUser().getId(), code)) {
+                throw new BusinessException(BookingService.DISCOUNT_ALREADY_USED_MESSAGE);
+            }
 
             result.put("valid", true);
             result.put("discountAmount", discountAmount);
@@ -195,10 +205,26 @@ public class CustomerBookingController {
                 : bookingService.findById(id);
 
         model.addAttribute("booking", booking);
+        model.addAttribute("payment", paymentService.findByBookingId(id).orElse(null));
         model.addAttribute("canModify", bookingService.canModify(booking));
         model.addAttribute("timeOptions", generateTimeOptions());
         model.addAttribute("combos", comboService.findActive());
         return "customer/booking-success";
+    }
+
+    // Khach xem/in hoa don cua chinh minh - bat buoc dang nhap (thuoc /customer/**) va dung chu don
+    @GetMapping("/{id}/invoice")
+    public String invoice(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails,
+                          Model model, RedirectAttributes redirectAttributes) {
+        try {
+            Booking booking = bookingService.findByIdForCustomer(id, userDetails.getUser().getId());
+            model.addAllAttributes(paymentService.buildInvoiceData(booking));
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            return "redirect:/customer/bookings";
+        }
+        model.addAttribute("backUrl", "/customer/bookings/" + id);
+        return "admin/bookings/invoice";
     }
 
     @PostMapping("/{id}/edit-time")

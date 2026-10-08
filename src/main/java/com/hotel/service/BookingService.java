@@ -42,6 +42,18 @@ public class BookingService {
         this.emailService = emailService;
     }
 
+    public static final String DISCOUNT_ALREADY_USED_MESSAGE =
+            "Bạn đã sử dụng mã giảm giá này rồi. Mỗi mã chỉ được dùng 1 lần cho mỗi khách hàng";
+
+    // Dung cho nut "Kiem tra ma" (xem truoc) - luong tao booking van tu kiem tra lai trong createBooking
+    public boolean hasUsedDiscountCode(Long customerId, String code) {
+        String normalizedCode = code == null ? "" : code.trim().toUpperCase();
+        return discountCodeRepository.findByCodeAndActiveTrue(normalizedCode)
+                .map(dc -> bookingRepository.existsByCustomerIdAndDiscountCodeIdAndStatusNot(
+                        customerId, dc.getId(), BookingStatus.CANCELLED))
+                .orElse(false);
+    }
+
     @Transactional
     public Booking createBooking(User customer, Long roomId, LocalDate checkInDate, LocalDate checkOutDate,
                                   LocalTime checkInTime, LocalTime checkOutTime, Integer guests,
@@ -109,6 +121,11 @@ public class BookingService {
             if (discountCode.getApplicableCustomerType() != null
                     && discountCode.getApplicableCustomerType() != customer.getCustomerType()) {
                 throw new BusinessException("Mã giảm giá này không áp dụng cho loại khách hàng của bạn");
+            }
+
+            if (bookingRepository.existsByCustomerIdAndDiscountCodeIdAndStatusNot(
+                    customer.getId(), discountCode.getId(), BookingStatus.CANCELLED)) {
+                throw new BusinessException(DISCOUNT_ALREADY_USED_MESSAGE);
             }
 
             if (discountCode.getDiscountType() == DiscountType.PERCENTAGE) {

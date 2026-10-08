@@ -44,10 +44,18 @@
             (giảm <span th:text="${#numbers.formatDecimal(booking.discountAmount, 1, 0)} + 'VND'"></span>)
         </p>
         <p class="fw-bold fs-5 mb-0">Tổng tiền: <span th:text="${#numbers.formatDecimal(booking.totalAmount, 1, 0)} + 'VND'"></span></p>
+        <p class="mb-0 mt-2">
+            <span th:if="${payment != null and payment.status.name() == 'PAID'}" class="badge bg-success"
+                  th:text="'Đã thanh toán - ' + ${payment.paymentMethod.vietnameseLabel}"></span>
+            <span th:unless="${payment != null and payment.status.name() == 'PAID'}" class="badge bg-secondary">
+                Chưa thanh toán (thanh toán khi trả phòng)</span>
+        </p>
 
         <a th:href="@{/customer/rooms}" class="btn btn-primary w-100 mt-4">Tiếp tục tìm phòng</a>
 
         <div sec:authorize="isAuthenticated()">
+            <a th:if="${payment != null and payment.status.name() == 'PAID'}" target="_blank"
+               th:href="@{/customer/bookings/{id}/invoice(id=${booking.id})}" class="btn btn-outline-primary w-100 mt-2">Xem / in hóa đơn</a>
             <a th:href="@{/customer/bookings}" class="btn btn-outline-secondary w-100 mt-2">Xem lịch sử đặt phòng</a>
 
             <form th:action="@{/customer/bookings/{id}/cancel(id=${booking.id})}" method="post" class="mt-2"

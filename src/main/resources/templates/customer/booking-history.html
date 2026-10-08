@@ -12,6 +12,8 @@
 <main class="container py-5 flex-grow-1">
     <h3 class="fw-bold mb-4">Lịch sử đặt phòng</h3>
 
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
     <div th:if="${#lists.isEmpty(bookings)}" class="alert alert-info">
         Bạn chưa có đơn đặt phòng nào.
         <a th:href="@{/customer/rooms}">Tìm phòng ngay</a>
@@ -28,6 +30,7 @@
                 <th>Combo</th>
                 <th>Tổng tiền</th>
                 <th>Trạng thái</th>
+                <th>Thanh toán</th>
                 <th></th>
             </tr>
             </thead>
@@ -40,8 +43,15 @@
                 <td th:text="${b.combo != null} ? ${b.combo.name} : '-'"></td>
                 <td th:text="${#numbers.formatDecimal(b.totalAmount, 1, 0)} + 'VND'"></td>
                 <td><span class="badge bg-secondary" th:text="${b.status.vietnameseLabel}"></span></td>
-                <td>
+                <td th:with="pay=${payments[b.id]}">
+                    <span th:if="${pay != null and pay.status.name() == 'PAID'}" class="badge bg-success"
+                          th:text="${pay.paymentMethod.vietnameseLabel}"></span>
+                    <span th:unless="${pay != null and pay.status.name() == 'PAID'}" class="text-muted small">Chưa thanh toán</span>
+                </td>
+                <td class="text-nowrap">
                     <a th:href="@{/customer/bookings/{id}(id=${b.id})}" class="btn btn-sm btn-outline-primary">Xem chi tiết</a>
+                    <a th:if="${payments[b.id] != null and payments[b.id].status.name() == 'PAID'}" target="_blank"
+                       th:href="@{/customer/bookings/{id}/invoice(id=${b.id})}" class="btn btn-sm btn-outline-success">Hóa đơn</a>
                 </td>
             </tr>
             </tbody>
