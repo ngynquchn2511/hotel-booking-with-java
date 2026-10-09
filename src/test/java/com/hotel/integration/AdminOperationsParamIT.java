@@ -371,10 +371,44 @@ class AdminOperationsParamIT extends ItFixtures {
         }
         var mv = mockMvc.perform(req).andExpect(status().isOk())
                 .andExpect(model().attributeExists("totalRooms", "availableRooms", "occupiedRooms", "notReadyRooms", "maintenanceRooms",
-                        "pendingBookings", "bookingStatusLabels", "roomTypeLabels", "trendLabels"))
+                        "pendingBookings", "bookingStatusLabels", "roomTypeLabels", "trendLabels", "kpi"))
                 .andReturn().getModelAndView();
         LocalDate f = (LocalDate) mv.getModel().get("fromDate");
         LocalDate t = (LocalDate) mv.getModel().get("toDate");
         assertThat(f).isBeforeOrEqualTo(t);
+    }
+
+    @Test
+    @TcSteps("Tạo đơn đã trả phòng hôm nay, nhân viên GET /admin/dashboard/export, đọc file Excel trả về bằng Apache POI")
+    void exportRevenueExcel() throws Exception {
+        Booking b = persistBooking(customer, room, BookingStatus.CHECKED_OUT, 0, 2);
+        LocalDate today = LocalDate.now();
+        var res = mockMvc.perform(get("/admin/dashboard/export").param("fromDate", today.minusDays(3).toString())
+                        .param("toDate", today.toString()).with(as(staff)))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString(".xlsx")))
+                .andReturn().getResponse();
+
+        try (var wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(res.getContentAsByteArray()))) {
+            assertThat(wb.getSheet("Tổng quan")).isNotNull();
+            var sheet = wb.getSheet("Đơn đặt phòng");
+            assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("Mã đơn");
+            boolean found = false;
+            for (var row : sheet) {
+                if (row.getRowNum() > 0 && ("#" + b.getId()).equals(row.getCell(0).getStringCellValue())) {
+                    found = true;
+                    assertThat(row.getCell(4).getStringCellValue()).isEqualTo(room.getRoomNumber());
+                    assertThat(row.getCell(11).getNumericCellValue()).isEqualTo(b.getTotalAmount().doubleValue());
+                }
+            }
+            assertThat(found).as("file Excel có dòng của đơn vừa tạo").isTrue();
+        }
+    }
+
+    @Test
+    @TcSteps("GET /admin/dashboard/export khi chưa đăng nhập và với vai trò CUSTOMER")
+    void exportRevenueExcel_requiresStaffOrAdmin() throws Exception {
+        mockMvc.perform(get("/admin/dashboard/export")).andExpect(status().is3xxRedirection());
+        mockMvc.perform(get("/admin/dashboard/export").with(as(customer))).andExpect(status().isForbidden());
     }
 }

@@ -551,6 +551,45 @@ class BookingServiceTest {
         assertThat(trend.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add)).isEqualByComparingTo(bd(350000));
     }
 
+    private Booking stay(LocalDate in, LocalDate out, long total, BookingStatus status) {
+        return Booking.builder().id(200L).customer(customer).room(room).checkInDate(in).checkOutDate(out)
+                .totalAmount(bd(total)).discountAmount(BigDecimal.ZERO).status(status).build();
+    }
+
+    @Test
+    void getHotelKpi_countsOnlyNightsInsideRangeAndSoldStatuses() {
+        LocalDate from = LocalDate.of(2026, 3, 1);
+        LocalDate to = LocalDate.of(2026, 3, 10);                       // 10 ngay x 2 phong = 20 dem-phong
+        when(roomRepository.count()).thenReturn(2L);
+        when(bookingRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(
+                stay(from.plusDays(2), from.plusDays(5), 900000, BookingStatus.CONFIRMED),     // 3 dem, ca 3 trong khoang
+                stay(from.minusDays(1), from.plusDays(1), 400000, BookingStatus.CHECKED_OUT),  // 2 dem, 1 dem trong khoang
+                stay(from.plusDays(1), from.plusDays(3), 500000, BookingStatus.PENDING),       // chua xac nhan -> bo qua
+                stay(from.plusDays(1), from.plusDays(3), 500000, BookingStatus.CANCELLED),     // da huy -> bo qua
+                stay(to, to.plusDays(4), 800000, BookingStatus.CHECKED_IN)));                  // 4 dem, 1 dem (dem 10/3) trong khoang
+
+        BookingService.HotelKpi kpi = bookingService.getHotelKpi(from, to);
+
+        // da ban 3 + 1 + 1 = 5 dem; tien = 900.000 + 200.000 + 200.000 = 1.300.000
+        assertEquals(5, kpi.soldRoomNights());
+        assertEquals(20, kpi.availableRoomNights());
+        assertEquals(25.0, kpi.occupancyRate());
+        assertThat(kpi.adr()).isEqualByComparingTo(bd(260000));
+        assertThat(kpi.revPar()).isEqualByComparingTo(bd(65000));
+    }
+
+    @Test
+    void getHotelKpi_noRoomsOrBookings_returnsZeros() {
+        when(roomRepository.count()).thenReturn(0L);
+        when(bookingRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of());
+
+        BookingService.HotelKpi kpi = bookingService.getHotelKpi(LocalDate.now().minusDays(6), LocalDate.now());
+
+        assertEquals(0.0, kpi.occupancyRate());
+        assertThat(kpi.adr()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(kpi.revPar()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
     @Test
     void getRevenueTrend_groupsByDayForShortRange() {
         LocalDate today = LocalDate.now();

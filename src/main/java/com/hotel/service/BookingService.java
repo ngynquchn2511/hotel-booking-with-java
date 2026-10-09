@@ -11,16 +11,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class BookingService {
@@ -470,11 +473,63 @@ public class BookingService {
         return revenue;
     }
 
+    // ===== Chi so khach san - tinh theo ngay khach O (dem luu tru), khong theo ngay tao don =====
+
+    // Don duoc tinh la da ban phong: da xac nhan / dang o / da tra phong (bo qua don cho duyet va don huy)
+    private static final Set<BookingStatus> ROOM_SOLD_STATUSES =
+            EnumSet.of(BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT);
+
+    // occupancyRate: % dem-phong da ban / tong dem-phong co the ban (so phong x so ngay)
+    // adr: gia trung binh moi dem-phong da ban; revPar: doanh thu tren moi dem-phong co the ban
+    public record HotelKpi(double occupancyRate, BigDecimal adr, BigDecimal revPar,
+                           long soldRoomNights, long availableRoomNights) {
+    }
+
+    // Tien don (phong + combo - giam gia, khong gom phu phi) chia deu cho tung dem cua don,
+    // chi cong cac dem nam trong khoang [fromDate, toDate]
+    public HotelKpi getHotelKpi(LocalDate fromDate, LocalDate toDate) {
+        long days = ChronoUnit.DAYS.between(fromDate, toDate) + 1;
+        long availableRoomNights = roomRepository.count() * days;
+        LocalDate rangeEnd = toDate.plusDays(1);
+
+        long soldRoomNights = 0;
+        BigDecimal roomRevenue = BigDecimal.ZERO;
+        for (Booking booking : findAllBookings()) {
+            if (!ROOM_SOLD_STATUSES.contains(booking.getStatus())) {
+                continue;
+            }
+            long nights = ChronoUnit.DAYS.between(booking.getCheckInDate(), booking.getCheckOutDate());
+            LocalDate start = booking.getCheckInDate().isAfter(fromDate) ? booking.getCheckInDate() : fromDate;
+            LocalDate end = booking.getCheckOutDate().isBefore(rangeEnd) ? booking.getCheckOutDate() : rangeEnd;
+            long nightsInRange = ChronoUnit.DAYS.between(start, end);
+            if (nights <= 0 || nightsInRange <= 0) {
+                continue;
+            }
+            soldRoomNights += nightsInRange;
+            roomRevenue = roomRevenue.add(booking.getTotalAmount().multiply(BigDecimal.valueOf(nightsInRange))
+                    .divide(BigDecimal.valueOf(nights), 0, RoundingMode.HALF_UP));
+        }
+
+        double occupancyRate = availableRoomNights == 0 ? 0
+                : Math.round(soldRoomNights * 1000.0 / availableRoomNights) / 10.0;
+        BigDecimal adr = soldRoomNights == 0 ? BigDecimal.ZERO
+                : roomRevenue.divide(BigDecimal.valueOf(soldRoomNights), 0, RoundingMode.HALF_UP);
+        BigDecimal revPar = availableRoomNights == 0 ? BigDecimal.ZERO
+                : roomRevenue.divide(BigDecimal.valueOf(availableRoomNights), 0, RoundingMode.HALF_UP);
+        return new HotelKpi(occupancyRate, adr, revPar, soldRoomNights, availableRoomNights);
+    }
+
+    // Don tao trong khoang [fromDate, toDate] - cung co so voi cac bieu do, dung cho file Excel
+    public List<Booking> findBookingsCreatedBetween(LocalDate fromDate, LocalDate toDate) {
+        return findAllBookings().stream().filter(b -> isWithinRange(b, fromDate, toDate)).toList();
+    }
+
     private BigDecimal revenueOf(Booking booking, Map<Long, BigDecimal> charges) {
         return booking.getTotalAmount().add(charges.getOrDefault(booking.getId(), BigDecimal.ZERO));
     }
 
-    private Map<Long, BigDecimal> chargeTotalsByBooking() {
+    // Tong phu phi theo ma don (don khong co phu phi thi khong co trong map)
+    public Map<Long, BigDecimal> chargeTotalsByBooking() {
         Map<Long, BigDecimal> totals = new HashMap<>();
         for (Object[] row : chargeRepository.sumAmountGroupByBooking()) {
             totals.put((Long) row[0], (BigDecimal) row[1]);

@@ -5,8 +5,13 @@ import com.hotel.entity.PaymentMethod;
 import com.hotel.entity.RoomStatus;
 import com.hotel.service.BookingService;
 import com.hotel.service.PaymentService;
+import com.hotel.service.RevenueExportService;
 import com.hotel.service.RoomService;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,11 +32,14 @@ public class AdminController {
     private final RoomService roomService;
     private final BookingService bookingService;
     private final PaymentService paymentService;
+    private final RevenueExportService revenueExportService;
 
-    public AdminController(RoomService roomService, BookingService bookingService, PaymentService paymentService) {
+    public AdminController(RoomService roomService, BookingService bookingService, PaymentService paymentService,
+                           RevenueExportService revenueExportService) {
         this.roomService = roomService;
         this.bookingService = bookingService;
         this.paymentService = paymentService;
+        this.revenueExportService = revenueExportService;
     }
 
     @GetMapping("/admin/dashboard")
@@ -40,18 +48,9 @@ public class AdminController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             Model model) {
 
-        LocalDate today = LocalDate.now();
-        if (toDate == null) {
-            toDate = today;
-        }
-        if (fromDate == null) {
-            fromDate = today.minusDays(DEFAULT_RANGE_DAYS);
-        }
-        if (fromDate.isAfter(toDate)) {
-            LocalDate swap = fromDate;
-            fromDate = toDate;
-            toDate = swap;
-        }
+        LocalDate[] range = normalizeRange(fromDate, toDate);
+        fromDate = range[0];
+        toDate = range[1];
         model.addAttribute("fromDate", fromDate);
         model.addAttribute("toDate", toDate);
 
@@ -93,6 +92,38 @@ public class AdminController {
         model.addAttribute("paidCash", paidByMethod.get(PaymentMethod.CASH));
         model.addAttribute("paidTransfer", paidByMethod.get(PaymentMethod.BANK_TRANSFER));
 
+        // Chi so khach san: cong suat phong, ADR, RevPAR (theo ngay khach o)
+        model.addAttribute("kpi", bookingService.getHotelKpi(fromDate, toDate));
+
         return "admin/dashboard";
+    }
+
+    // Tai file Excel bao cao doanh thu theo cung khoang ngay dang loc tren dashboard
+    @GetMapping("/admin/dashboard/export")
+    public ResponseEntity<byte[]> exportRevenue(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        LocalDate[] range = normalizeRange(fromDate, toDate);
+        byte[] file = revenueExportService.exportRevenue(range[0], range[1]);
+        String fileName = "bao-cao-doanh-thu_" + range[0] + "_" + range[1] + ".xlsx";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(fileName).build().toString())
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file);
+    }
+
+    // Mac dinh 30 ngay gan nhat; neu chon nguoc (tu ngay > den ngay) thi dao lai
+    private LocalDate[] normalizeRange(LocalDate fromDate, LocalDate toDate) {
+        LocalDate today = LocalDate.now();
+        if (toDate == null) {
+            toDate = today;
+        }
+        if (fromDate == null) {
+            fromDate = today.minusDays(DEFAULT_RANGE_DAYS);
+        }
+        if (fromDate.isAfter(toDate)) {
+            return new LocalDate[]{toDate, fromDate};
+        }
+        return new LocalDate[]{fromDate, toDate};
     }
 }
