@@ -17,7 +17,7 @@
         <div class="col-md-9">
             <h3 class="fw-bold mb-4">Tổng quan hệ thống</h3>
             <p class="text-muted" sec:authorize="hasRole('ADMIN')">Đăng nhập thành công với quyền Quản trị viên. Bạn có thể quản lý loại phòng, phòng, combo, mã giảm giá, tài khoản nhân viên và xem nhật ký thao tác ở menu bên trái.</p>
-            <p class="text-muted" sec:authorize="hasRole('STAFF') and not hasRole('ADMIN')">Đăng nhập thành công với quyền Nhân viên. Bạn có đầy đủ quyền quản lý như quản trị viên, ngoại trừ quản lý tài khoản nhân viên và xem nhật ký thao tác.</p>
+            <p class="text-muted" sec:authorize="hasRole('STAFF') and not hasRole('ADMIN')">Đăng nhập thành công với quyền Nhân viên. Bạn có thể xử lý đơn đặt phòng, đặt phòng tại quầy, check-in/check-out, cập nhật trạng thái và thông tin phòng. Việc tạo/xóa danh mục, thay đổi giá, mã giảm giá và loại khách hàng do quản trị viên thực hiện.</p>
 
             <div class="row g-3 mt-2">
                 <div class="col-md-4">

@@ -58,31 +58,31 @@ class AuditAndStaffAccountIT {
     }
 
     @Test
-    @TcSteps("STAFF đổi loại khách hàng qua POST /admin/customers/{id}/update-type, sau đó đọc bảng audit_logs")
-    void staffUpdate_isLoggedWithActorTimeAndOldNewValues() throws Exception {
-        User staff = persistUser(UserRole.STAFF);
+    @TcSteps("ADMIN đổi loại khách hàng qua POST /admin/customers/{id}/update-type, sau đó đọc bảng audit_logs")
+    void adminUpdate_isLoggedWithActorTimeAndOldNewValues() throws Exception {
+        User actor = persistUser(UserRole.ADMIN);
         User customer = persistUser(UserRole.CUSTOMER);
         LocalDateTime before = LocalDateTime.now().minusSeconds(1);
 
         mockMvc.perform(post("/admin/customers/{id}/update-type", customer.getId())
-                        .param("customerType", "VIP").with(csrf()).with(user(new CustomUserDetails(staff))))
+                        .param("customerType", "VIP").with(csrf()).with(user(new CustomUserDetails(actor))))
                 .andExpect(status().is3xxRedirection());
 
         AuditLog log = logsFor("User", customer.getId()).stream()
                 .filter(l -> l.getAction() == AuditAction.UPDATE).findFirst().orElseThrow();
-        assertThat(log.getActorEmail()).isEqualTo(staff.getEmail());
-        assertThat(log.getActorRole()).isEqualTo("STAFF");
+        assertThat(log.getActorEmail()).isEqualTo(actor.getEmail());
+        assertThat(log.getActorRole()).isEqualTo("ADMIN");
         assertThat(log.getCreatedAt()).isAfter(before);
         assertThat(log.getChanges()).contains("Loại khách hàng").contains("→");
         assertThat(log.getRequestUrl()).contains("/admin/customers/" + customer.getId() + "/update-type");
 
         // Trang nhat ky (chi ADMIN) hien thi duoc ban ghi vua tao, loc theo email nguoi thao tac
         User admin = persistUser(UserRole.ADMIN);
-        String html = mockMvc.perform(get("/admin/audit-logs").param("q", staff.getEmail()).param("entityType", "User")
+        String html = mockMvc.perform(get("/admin/audit-logs").param("q", actor.getEmail()).param("entityType", "User")
                         .param("action", "UPDATE").with(user(new CustomUserDetails(admin))))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
-        assertThat(html).contains(staff.getEmail()).contains("Loại khách hàng: Khách lần đầu → ");
+        assertThat(html).contains(actor.getEmail()).contains("Loại khách hàng: Khách lần đầu → ");
     }
 
     @Test

@@ -30,8 +30,9 @@
 
                     <div class="mb-3">
                         <label class="form-label">Giá cơ bản (VND / đêm)</label>
-                        <input type="number" step="1000" th:field="*{basePrice}" class="form-control">
+                        <input type="number" step="1000" th:field="*{basePrice}" class="form-control" th:readonly="${!#authorization.expression('hasRole(''ADMIN'')')}">
                         <div class="text-danger small" th:if="${#fields.hasErrors('basePrice')}" th:errors="*{basePrice}"></div>
+                        <div class="text-muted small mt-1" sec:authorize="!hasRole('ADMIN')">Chỉ quản trị viên được thay đổi giá.</div>
                     </div>
 
                     <div class="mb-3">

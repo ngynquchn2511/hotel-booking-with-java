@@ -4,11 +4,13 @@ import com.hotel.dto.RoomRequest;
 import com.hotel.entity.RoomStatus;
 import com.hotel.exception.BusinessException;
 import com.hotel.entity.Room;
+import com.hotel.security.CustomUserDetails;
 import com.hotel.service.ComboService;
 import com.hotel.service.RoomService;
 import com.hotel.service.RoomTypeService;
 import com.hotel.util.PaginationUtil;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -146,7 +148,12 @@ public class AdminRoomController {
                           @Valid @ModelAttribute("roomRequest") RoomRequest request,
                           BindingResult bindingResult,
                           @RequestParam(value = "imageFiles", required = false) List<MultipartFile> imageFiles,
+                          @AuthenticationPrincipal CustomUserDetails currentUser,
                           Model model) {
+        // Chi ADMIN duoc doi gia - STAFF gui len gia nao cung giu nguyen gia cu
+        if (!currentUser.isAdmin()) {
+            request.setPrice(roomService.findById(id).getPrice());
+        }
         if (bindingResult.hasErrors()) {
             model.addAttribute("roomTypes", roomTypeService.findAll());
             model.addAttribute("roomId", id);

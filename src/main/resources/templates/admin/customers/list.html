@@ -40,12 +40,13 @@
                     <td th:text="${c.email}"></td>
                     <td th:text="${c.phoneNumber}"></td>
                     <td>
-                        <form th:action="@{/admin/customers/{id}/update-type(id=${c.id})}" method="post" class="d-flex gap-1">
+                        <form sec:authorize="hasRole('ADMIN')" th:action="@{/admin/customers/{id}/update-type(id=${c.id})}" method="post" class="d-flex gap-1">
                             <select name="customerType" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
                                 <option th:each="ct : ${customerTypes}" th:value="${ct}" th:text="${ct.vietnameseLabel}"
                                         th:selected="${ct == c.customerType}"></option>
                             </select>
                         </form>
+                        <span sec:authorize="!hasRole('ADMIN')" th:text="${c.customerType?.vietnameseLabel}"></span>
                     </td>
                     <td th:text="${#temporals.format(c.createdAt, 'dd/MM/yyyy')}"></td>
                     <td>
@@ -53,7 +54,7 @@
                               th:text="${c.isLocked()} ? 'Đã khóa' : 'Hoạt động'"></span>
                     </td>
                     <td class="text-end">
-                        <form th:action="@{/admin/customers/{id}/toggle-lock(id=${c.id})}" method="post" class="d-inline"
+                        <form sec:authorize="hasRole('ADMIN')" th:action="@{/admin/customers/{id}/toggle-lock(id=${c.id})}" method="post" class="d-inline"
                               onsubmit="return confirm('Xác nhận thay đổi trạng thái khóa của tài khoản này?')">
                             <button type="submit" class="btn btn-sm"
                                     th:classappend="${c.isLocked()} ? 'btn-outline-success' : 'btn-outline-danger'"

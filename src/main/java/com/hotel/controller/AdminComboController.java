@@ -2,9 +2,11 @@ package com.hotel.controller;
 
 import com.hotel.dto.ComboRequest;
 import com.hotel.entity.Combo;
+import com.hotel.security.CustomUserDetails;
 import com.hotel.service.ComboService;
 import com.hotel.util.PaginationUtil;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -75,7 +77,12 @@ public class AdminComboController {
                           @Valid @ModelAttribute("comboRequest") ComboRequest request,
                           BindingResult bindingResult,
                           @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+                          @AuthenticationPrincipal CustomUserDetails currentUser,
                           Model model) {
+        // Chi ADMIN duoc doi gia - STAFF gui len gia nao cung giu nguyen gia cu
+        if (!currentUser.isAdmin()) {
+            request.setPrice(comboService.findById(id).getPrice());
+        }
         if (bindingResult.hasErrors()) {
             model.addAttribute("comboId", id);
             model.addAttribute("isEdit", true);

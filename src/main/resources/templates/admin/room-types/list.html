@@ -18,7 +18,7 @@
         <div class="col-md-9">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3 class="fw-bold m-0">Danh sách loại phòng</h3>
-                <a th:href="@{/admin/room-types/new}" class="btn btn-primary">Thêm loại phòng</a>
+                <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/room-types/new}" class="btn btn-primary">Thêm loại phòng</a>
             </div>
 
             <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
@@ -45,7 +45,7 @@
                     <td th:text="${rt.area} + ' m2'"></td>
                     <td class="text-end">
                         <a th:href="@{/admin/room-types/{id}/edit(id=${rt.id})}" class="btn btn-sm btn-outline-secondary">Sửa</a>
-                        <form th:action="@{/admin/room-types/{id}/delete(id=${rt.id})}" method="post" class="d-inline"
+                        <form sec:authorize="hasRole('ADMIN')" th:action="@{/admin/room-types/{id}/delete(id=${rt.id})}" method="post" class="d-inline"
                               onsubmit="return confirm('Xóa loại phòng này?')">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
                         </form>

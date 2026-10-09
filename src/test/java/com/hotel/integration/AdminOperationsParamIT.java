@@ -4,6 +4,7 @@ import com.hotel.entity.*;
 import com.hotel.tc.TcSteps;
 import com.hotel.tc.TcSuite;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -150,7 +151,7 @@ class AdminOperationsParamIT extends ItFixtures {
         }
     }
 
-    @TcSteps("Tạo phòng có/không có đơn đặt phòng, nhân viên POST /admin/rooms/{id}/delete")
+    @TcSteps("Tạo phòng có/không có đơn đặt phòng, ADMIN POST /admin/rooms/{id}/delete")
     @ParameterizedTest(name = "Xóa phòng {0} ¦ POST /admin/rooms/<id>/delete ¦ Phòng còn trong DB = {1}")
     @CsvSource({"chưa có đơn,false", "đã có đơn PENDING,true", "đã có đơn CHECKED_OUT,true"})
     void roomDelete(String label, boolean kept) throws Exception {
@@ -160,7 +161,7 @@ class AdminOperationsParamIT extends ItFixtures {
         } else if (label.contains("CHECKED_OUT")) {
             persistBooking(customer, r, BookingStatus.CHECKED_OUT, 3, 1);
         }
-        mockMvc.perform(post("/admin/rooms/{id}/delete", r.getId()).with(csrf()).with(as(staff))).andExpect(redirectedUrl("/admin/rooms"));
+        mockMvc.perform(post("/admin/rooms/{id}/delete", r.getId()).with(csrf()).with(as(admin))).andExpect(redirectedUrl("/admin/rooms"));
         assertThat(roomRepository.existsById(r.getId())).isEqualTo(kept);
     }
 
@@ -194,7 +195,7 @@ class AdminOperationsParamIT extends ItFixtures {
         }
     }
 
-    @TcSteps("Tạo loại phòng có/không có phòng, nhân viên POST /admin/room-types/{id}/delete")
+    @TcSteps("Tạo loại phòng có/không có phòng, ADMIN POST /admin/room-types/{id}/delete")
     @ParameterizedTest(name = "Xóa loại phòng {0} ¦ POST /admin/room-types/<id>/delete ¦ Loại phòng còn trong DB = {1}")
     @CsvSource({"chưa có phòng nào,false", "đang có phòng,true"})
     void roomTypeDelete(String label, boolean kept) throws Exception {
@@ -202,18 +203,30 @@ class AdminOperationsParamIT extends ItFixtures {
         if (kept) {
             persistRoom(t, 100000, RoomStatus.AVAILABLE);
         }
-        mockMvc.perform(post("/admin/room-types/{id}/delete", t.getId()).with(csrf()).with(as(staff))).andExpect(redirectedUrl("/admin/room-types"));
+        mockMvc.perform(post("/admin/room-types/{id}/delete", t.getId()).with(csrf()).with(as(admin))).andExpect(redirectedUrl("/admin/room-types"));
         assertThat(roomTypeRepository.existsById(t.getId())).isEqualTo(kept);
     }
 
-    @TcSteps("Nhân viên POST /admin/room-types/{id}/edit đổi giá cơ bản")
+    @TcSteps("ADMIN POST /admin/room-types/{id}/edit đổi giá cơ bản")
     @ParameterizedTest(name = "Sửa loại phòng - giá mới {0} ¦ POST .../edit basePrice={0} ¦ Cập nhật = {1}")
     @CsvSource({"350000,true", "1,true", "0,false"})
     void roomTypeEdit(String price, boolean ok) throws Exception {
         mockMvc.perform(post("/admin/room-types/{id}/edit", type.getId()).param("name", type.getName()).param("basePrice", price)
-                .param("maxGuests", "2").with(csrf()).with(as(staff)));
+                .param("maxGuests", "2").with(csrf()).with(as(admin)));
         boolean updated = roomTypeRepository.findById(type.getId()).orElseThrow().getBasePrice().compareTo(new java.math.BigDecimal(price)) == 0;
         assertThat(updated).isEqualTo(ok);
+    }
+
+    @Test
+    @TcSteps("Nhân viên POST /admin/room-types/{id}/edit gửi giá mới kèm mô tả mới")
+    void staffRoomTypeEdit_keepsPriceButUpdatesInfo() throws Exception {
+        java.math.BigDecimal oldPrice = roomTypeRepository.findById(type.getId()).orElseThrow().getBasePrice();
+        mockMvc.perform(post("/admin/room-types/{id}/edit", type.getId()).param("name", type.getName()).param("basePrice", "1")
+                .param("maxGuests", "2").param("description", "Mô tả do nhân viên sửa").with(csrf()).with(as(staff)))
+                .andExpect(redirectedUrl("/admin/room-types"));
+        RoomType saved = roomTypeRepository.findById(type.getId()).orElseThrow();
+        assertThat(saved.getBasePrice()).isEqualByComparingTo(oldPrice);
+        assertThat(saved.getDescription()).isEqualTo("Mô tả do nhân viên sửa");
     }
 
     // ===================== Combo =====================
@@ -270,12 +283,12 @@ class AdminOperationsParamIT extends ItFixtures {
         }
     }
 
-    @TcSteps("Tạo mã active=A, nhân viên POST /admin/discount-codes/{id}/toggle-active rồi khách kiểm tra mã qua /customer/bookings/check-discount")
+    @TcSteps("Tạo mã active=A, ADMIN POST /admin/discount-codes/{id}/toggle-active rồi khách kiểm tra mã qua /customer/bookings/check-discount")
     @ParameterizedTest(name = "Bật/Tắt mã đang active={0} ¦ toggle rồi check-discount ¦ Khách dùng được mã = {1}")
     @CsvSource({"true,false", "false,true"})
     void discountToggleAffectsCustomer(boolean initial, boolean usable) throws Exception {
         DiscountCode dc = persistCode("TGL" + seq(), DiscountType.PERCENTAGE, 10, null, initial);
-        mockMvc.perform(post("/admin/discount-codes/{id}/toggle-active", dc.getId()).with(csrf()).with(as(staff)))
+        mockMvc.perform(post("/admin/discount-codes/{id}/toggle-active", dc.getId()).with(csrf()).with(as(admin)))
                 .andExpect(redirectedUrl("/admin/discount-codes"));
         mockMvc.perform(get("/customer/bookings/check-discount").param("code", dc.getCode()).param("roomId", room.getId().toString())
                         .param("checkIn", LocalDate.now().plusDays(2).toString()).param("checkOut", LocalDate.now().plusDays(3).toString()))

@@ -70,8 +70,9 @@
 
                     <div class="mb-3">
                         <label class="form-label">Giá (VND / đêm)</label>
-                        <input type="number" step="1000" th:field="*{price}" class="form-control">
+                        <input type="number" step="1000" th:field="*{price}" class="form-control" th:readonly="${!#authorization.expression('hasRole(''ADMIN'')')}">
                         <div class="text-danger small" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></div>
+                        <div class="text-muted small mt-1" sec:authorize="!hasRole('ADMIN')">Chỉ quản trị viên được thay đổi giá.</div>
                     </div>
 
                     <div class="mb-3">
@@ -105,7 +106,9 @@
 
         roomTypeSelect.addEventListener('change', () => {
             const selectedType = roomTypeSelect.options[roomTypeSelect.selectedIndex];
-            priceInput.value = selectedType.dataset.price || '';
+            if (!priceInput.readOnly) {
+                priceInput.value = selectedType.dataset.price || '';
+            }
             descriptionInput.value = selectedType.dataset.description || '';
         });
     });

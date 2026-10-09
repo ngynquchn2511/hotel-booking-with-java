@@ -18,7 +18,7 @@
         <div class="col-md-9">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3 class="fw-bold m-0">Danh sách combo</h3>
-                <a th:href="@{/admin/combos/new}" class="btn btn-primary">Thêm combo</a>
+                <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/combos/new}" class="btn btn-primary">Thêm combo</a>
             </div>
 
             <div th:if="${#lists.isEmpty(combos)}" class="alert alert-info">
@@ -54,7 +54,7 @@
                         <form th:action="@{/admin/combos/{id}/toggle-active(id=${combo.id})}" method="post" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-outline-warning" th:text="${combo.active} ? 'Ẩn' : 'Hiện'"></button>
                         </form>
-                        <form th:action="@{/admin/combos/{id}/delete(id=${combo.id})}" method="post" class="d-inline"
+                        <form sec:authorize="hasRole('ADMIN')" th:action="@{/admin/combos/{id}/delete(id=${combo.id})}" method="post" class="d-inline"
                               onsubmit="return confirm('Xóa combo này?')">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
                         </form>

@@ -18,7 +18,7 @@
         <div class="col-md-9">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3 class="fw-bold m-0">Mã giảm giá</h3>
-                <a th:href="@{/admin/discount-codes/new}" class="btn btn-primary">Thêm mã giảm giá</a>
+                <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/discount-codes/new}" class="btn btn-primary">Thêm mã giảm giá</a>
             </div>
 
             <div th:if="${#lists.isEmpty(discountCodes)}" class="alert alert-info">
@@ -47,11 +47,11 @@
                               th:text="${dc.active} ? 'Đang áp dụng' : 'Đã tắt'"></span>
                     </td>
                     <td class="text-end">
-                        <a th:href="@{/admin/discount-codes/{id}/edit(id=${dc.id})}" class="btn btn-sm btn-outline-secondary">Sửa</a>
-                        <form th:action="@{/admin/discount-codes/{id}/toggle-active(id=${dc.id})}" method="post" class="d-inline">
+                        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/discount-codes/{id}/edit(id=${dc.id})}" class="btn btn-sm btn-outline-secondary">Sửa</a>
+                        <form sec:authorize="hasRole('ADMIN')" th:action="@{/admin/discount-codes/{id}/toggle-active(id=${dc.id})}" method="post" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-outline-warning" th:text="${dc.active} ? 'Tắt' : 'Bật'"></button>
                         </form>
-                        <form th:action="@{/admin/discount-codes/{id}/delete(id=${dc.id})}" method="post" class="d-inline"
+                        <form sec:authorize="hasRole('ADMIN')" th:action="@{/admin/discount-codes/{id}/delete(id=${dc.id})}" method="post" class="d-inline"
                               onsubmit="return confirm('Xóa mã giảm giá này?')">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
                         </form>

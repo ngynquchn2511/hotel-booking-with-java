@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -82,7 +83,16 @@ public class SecurityConfig {
                         // Quan ly tai khoan nhan vien va xem nhat ky thao tac - chi danh rieng cho ADMIN
                         .requestMatchers("/admin/staff-accounts", "/admin/staff-accounts/**",
                                 "/admin/audit-logs", "/admin/audit-logs/**").hasRole("ADMIN")
-                        // STAFF co moi quyen nhu ADMIN o cac chuc nang con lai (them/sua/xoa phong, combo, ma giam gia, doanh thu...)
+                        // Tao/xoa danh muc (loai phong, phong, combo) - chi ADMIN; STAFF chi xem/sua thong tin
+                        .requestMatchers("/admin/room-types/new", "/admin/room-types/*/delete",
+                                "/admin/rooms/new", "/admin/rooms/*/delete",
+                                "/admin/combos/new", "/admin/combos/*/delete").hasRole("ADMIN")
+                        // Ma giam gia: STAFF chi duoc xem danh sach, moi thao tac thay doi danh cho ADMIN
+                        .requestMatchers(HttpMethod.POST, "/admin/discount-codes/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/discount-codes/new", "/admin/discount-codes/*/edit").hasRole("ADMIN")
+                        // Doi loai khach hang (anh huong ma giam gia) va khoa tai khoan khach - chi ADMIN
+                        .requestMatchers("/admin/customers/*/update-type", "/admin/customers/*/toggle-lock").hasRole("ADMIN")
+                        // Cac chuc nang con lai (don dat phong, check-in/out, trang thai phong, doanh thu...) - ca STAFF va ADMIN
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers("/staff/**").hasAnyRole("STAFF", "ADMIN")
                         .anyRequest().authenticated()

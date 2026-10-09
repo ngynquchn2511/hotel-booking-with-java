@@ -1,6 +1,7 @@
 package com.hotel.security;
 
 import com.hotel.entity.User;
+import com.hotel.entity.UserRole;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +19,10 @@ public class CustomUserDetails implements UserDetails {
 
     public User getUser() {
         return user;
+    }
+
+    public boolean isAdmin() {
+        return user.getRole() == UserRole.ADMIN;
     }
 
     @Override
