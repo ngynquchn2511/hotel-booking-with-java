@@ -2,6 +2,7 @@ package com.hotel.service;
 
 import com.hotel.entity.*;
 import com.hotel.exception.BusinessException;
+import com.hotel.repository.BookingChargeRepository;
 import com.hotel.repository.BookingRepository;
 import com.hotel.repository.ComboRepository;
 import com.hotel.repository.DiscountCodeRepository;
@@ -35,6 +36,7 @@ class BookingServiceTest {
     @Mock private ComboRepository comboRepository;
     @Mock private DiscountCodeRepository discountCodeRepository;
     @Mock private EmailService emailService;
+    @Mock private BookingChargeRepository chargeRepository;
 
     @InjectMocks
     private BookingService bookingService;
@@ -531,6 +533,22 @@ class BookingServiceTest {
 
         assertEquals(1, revenue.size());
         assertEquals(0, bd(300000).compareTo(revenue.get("Phong Doi")));
+    }
+
+    @Test
+    void revenueCharts_includeSurcharges() {
+        LocalDate today = LocalDate.now();
+        Booking checkedOut = bookingWithCheckIn(LocalDateTime.now().minusDays(1), BookingStatus.CHECKED_OUT);
+        checkedOut.setCreatedAt(today.atTime(10, 0));
+        when(bookingRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(checkedOut));
+        // Don #100 co 50.000d phu phi (minibar, giat ui...)
+        when(chargeRepository.sumAmountGroupByBooking()).thenReturn(List.<Object[]>of(new Object[]{100L, bd(50000)}));
+
+        Map<String, BigDecimal> byType = bookingService.getRevenueByRoomType(today.minusDays(1), today.plusDays(1));
+        Map<String, BigDecimal> trend = bookingService.getRevenueTrend(today.minusDays(1), today.plusDays(1));
+
+        assertThat(byType.get("Phong Doi")).isEqualByComparingTo(bd(350000));
+        assertThat(trend.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add)).isEqualByComparingTo(bd(350000));
     }
 
     @Test

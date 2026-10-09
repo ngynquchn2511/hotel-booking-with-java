@@ -2,6 +2,7 @@ package com.hotel.unit;
 
 import com.hotel.entity.*;
 import com.hotel.exception.BusinessException;
+import com.hotel.repository.BookingChargeRepository;
 import com.hotel.repository.BookingRepository;
 import com.hotel.repository.ComboRepository;
 import com.hotel.repository.DiscountCodeRepository;
@@ -48,6 +49,7 @@ class BookingServiceParamTest {
     @Mock private ComboRepository comboRepository;
     @Mock private DiscountCodeRepository discountCodeRepository;
     @Mock private EmailService emailService;
+    @Mock private BookingChargeRepository chargeRepository;
 
     @InjectMocks private BookingService bookingService;
 

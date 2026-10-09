@@ -2,6 +2,7 @@ package com.hotel.service;
 
 import com.hotel.entity.*;
 import com.hotel.exception.BusinessException;
+import com.hotel.repository.BookingChargeRepository;
 import com.hotel.repository.BookingRepository;
 import com.hotel.repository.ComboRepository;
 import com.hotel.repository.DiscountCodeRepository;
@@ -16,6 +17,7 @@ import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,15 +33,17 @@ public class BookingService {
     private final ComboRepository comboRepository;
     private final DiscountCodeRepository discountCodeRepository;
     private final EmailService emailService;
+    private final BookingChargeRepository chargeRepository;
 
     public BookingService(BookingRepository bookingRepository, RoomRepository roomRepository,
                            ComboRepository comboRepository, DiscountCodeRepository discountCodeRepository,
-                           EmailService emailService) {
+                           EmailService emailService, BookingChargeRepository chargeRepository) {
         this.bookingRepository = bookingRepository;
         this.roomRepository = roomRepository;
         this.comboRepository = comboRepository;
         this.discountCodeRepository = discountCodeRepository;
         this.emailService = emailService;
+        this.chargeRepository = chargeRepository;
     }
 
     public static final String DISCOUNT_ALREADY_USED_MESSAGE =
@@ -419,14 +423,16 @@ public class BookingService {
     }
 
     // Bieu do cot: doanh thu theo tung loai phong trong khoang [fromDate, toDate] (bo qua don da huy)
+    // Doanh thu 1 don = tien don (phong + combo - giam gia) + phu phi phat sinh khi o
     public Map<String, BigDecimal> getRevenueByRoomType(LocalDate fromDate, LocalDate toDate) {
         Map<String, BigDecimal> revenue = new LinkedHashMap<>();
+        Map<Long, BigDecimal> charges = chargeTotalsByBooking();
         for (Booking booking : findAllBookings()) {
             if (booking.getStatus() == BookingStatus.CANCELLED || !isWithinRange(booking, fromDate, toDate)) {
                 continue;
             }
             String typeName = booking.getRoom().getRoomType().getName();
-            revenue.merge(typeName, booking.getTotalAmount(), BigDecimal::add);
+            revenue.merge(typeName, revenueOf(booking, charges), BigDecimal::add);
         }
         return revenue;
     }
@@ -452,15 +458,28 @@ public class BookingService {
             }
         }
 
+        Map<Long, BigDecimal> charges = chargeTotalsByBooking();
         for (Booking booking : findAllBookings()) {
             if (booking.getStatus() == BookingStatus.CANCELLED || !isWithinRange(booking, fromDate, toDate)) {
                 continue;
             }
             LocalDate createdDate = booking.getCreatedAt().toLocalDate();
             String label = groupByDay ? createdDate.format(dayFormatter) : YearMonth.from(createdDate).format(monthFormatter);
-            revenue.computeIfPresent(label, (key, existing) -> existing.add(booking.getTotalAmount()));
+            revenue.computeIfPresent(label, (key, existing) -> existing.add(revenueOf(booking, charges)));
         }
         return revenue;
+    }
+
+    private BigDecimal revenueOf(Booking booking, Map<Long, BigDecimal> charges) {
+        return booking.getTotalAmount().add(charges.getOrDefault(booking.getId(), BigDecimal.ZERO));
+    }
+
+    private Map<Long, BigDecimal> chargeTotalsByBooking() {
+        Map<Long, BigDecimal> totals = new HashMap<>();
+        for (Object[] row : chargeRepository.sumAmountGroupByBooking()) {
+            totals.put((Long) row[0], (BigDecimal) row[1]);
+        }
+        return totals;
     }
 
     private boolean isWithinRange(Booking booking, LocalDate fromDate, LocalDate toDate) {
