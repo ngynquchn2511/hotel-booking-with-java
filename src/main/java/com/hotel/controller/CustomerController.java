@@ -2,7 +2,9 @@ package com.hotel.controller;
 
 import com.hotel.exception.BusinessException;
 import com.hotel.repository.RoomTypeRepository;
+import com.hotel.service.BookingService;
 import com.hotel.service.ComboService;
+import com.hotel.service.PricingService;
 import com.hotel.service.ReviewService;
 import com.hotel.service.RoomService;
 import org.springframework.stereotype.Controller;
@@ -22,13 +24,18 @@ public class CustomerController {
     private final RoomTypeRepository roomTypeRepository;
     private final ComboService comboService;
     private final ReviewService reviewService;
+    private final BookingService bookingService;
+    private final PricingService pricingService;
 
     public CustomerController(RoomService roomService, RoomTypeRepository roomTypeRepository,
-                               ComboService comboService, ReviewService reviewService) {
+                               ComboService comboService, ReviewService reviewService,
+                               BookingService bookingService, PricingService pricingService) {
         this.roomService = roomService;
         this.roomTypeRepository = roomTypeRepository;
         this.comboService = comboService;
         this.reviewService = reviewService;
+        this.bookingService = bookingService;
+        this.pricingService = pricingService;
     }
 
     // Trang tim phong - hien form tim kiem, neu co du checkIn/checkOut thi hien ket qua
@@ -78,6 +85,10 @@ public class CustomerController {
         model.addAttribute("unavailableDates", roomService.findUnavailableDates(id).stream()
                 .map(LocalDate::toString)
                 .toList());
+        // Ngay chi co don cho xac nhan giu cho -> lich to mau rieng
+        model.addAttribute("pendingDates", roomService.findPendingOnlyDates(id).stream()
+                .map(LocalDate::toString)
+                .toList());
         model.addAttribute("checkIn", checkIn);
         model.addAttribute("checkOut", checkOut);
         model.addAttribute("guests", guests);
@@ -96,7 +107,8 @@ public class CustomerController {
                     throw new BusinessException("Ngày trả phòng phải lớn hơn ngày nhận phòng");
                 }
                 long nights = ChronoUnit.DAYS.between(checkIn, checkOut);
-                var roomAmount = room.getPrice().multiply(java.math.BigDecimal.valueOf(nights));
+                // Tinh theo tung dem (cuoi tuan / ngay le co phu thu) - khop voi so tien luc dat
+                var roomAmount = pricingService.roomAmount(room.getPrice(), checkIn, checkOut);
 
                 // Neu khach da chon combo thi cong them gia combo (tinh 1 lan, khong nhan theo dem)
                 var comboAmount = java.math.BigDecimal.ZERO;
@@ -107,7 +119,17 @@ public class CustomerController {
                 }
 
                 var totalAmount = roomAmount.add(comboAmount);
-                boolean available = roomService.isAvailableForDates(id, checkIn, checkOut);
+                // Kiem tra chi tiet: bao tri / trung don (cho xac nhan hay da xac nhan) / phong trong lai tu luc nao
+                BookingService.Availability availability = bookingService.checkAvailability(room, checkIn, checkOut);
+                boolean available = availability.isAvailable();
+                model.addAttribute("availability", availability);
+                model.addAttribute("availabilityMessage", availability.describe());
+                if (!available && availability.freeFrom() != null && !availability.maintenance()) {
+                    // Goi y dat lai tu ngay phong trong, giu nguyen so dem
+                    LocalDate suggestIn = availability.freeFrom().toLocalDate();
+                    model.addAttribute("suggestCheckIn", suggestIn);
+                    model.addAttribute("suggestCheckOut", suggestIn.plusDays(nights));
+                }
 
                 model.addAttribute("nights", nights);
                 model.addAttribute("roomAmount", roomAmount);

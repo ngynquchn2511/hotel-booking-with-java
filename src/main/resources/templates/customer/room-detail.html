@@ -35,6 +35,10 @@
         .calendar-day.unavailable, .calendar-day.past { color: #adb5bd; background: #e9ecef; cursor: not-allowed; }
         .calendar-day.selected, .calendar-day.in-range { background: #0d6efd; color: white; }
         .calendar-day.in-range { background: #cfe2ff; color: #212529; }
+        /* Ngay chi co don cho xac nhan giu cho: soc vang - co the trong lai neu don bi huy */
+        .calendar-day.pending, .pending-swatch { background: repeating-linear-gradient(45deg, #fff3cd, #fff3cd 4px, #ffe69c 4px, #ffe69c 8px) !important; color: #8a6100 !important; }
+        /* Ngay co khach nhung chon duoc lam ngay tra phong */
+        .calendar-day.checkout-only { background: #e9ecef; color: #212529; cursor: pointer; outline: 1.5px dashed #0d6efd; }
         .room-stars .bi { color: #f2b705; }
         .room-review { padding: .9rem 0 0; }
         .room-review + .room-review { margin-top: .9rem; border-top: 1.5px dashed #b9dcf0; }
@@ -137,7 +141,9 @@
                     <div class="d-flex gap-3 small mt-2">
                         <span><i class="d-inline-block border rounded me-1" style="width: 12px; height: 12px; background: white;"></i> Có thể đặt</span>
                         <span class="text-secondary"><i class="d-inline-block rounded me-1" style="width: 12px; height: 12px; background: #e9ecef;"></i> Đã có khách</span>
+                        <span class="text-secondary"><i class="d-inline-block rounded me-1 pending-swatch" style="width: 12px; height: 12px;"></i> Có đơn chờ xác nhận</span>
                     </div>
+                    <p class="small text-muted mt-1 mb-0">Ngày có khách vẫn chọn được làm <b>ngày trả phòng</b> (trả trước giờ khách sau nhận).</p>
                 </section>
 
                 <hr>
@@ -178,8 +184,24 @@
                     <p class="mb-1" th:if="${selectedCombo != null}">Combo (<span th:text="${selectedCombo.name}"></span>): <span th:text="${#numbers.formatDecimal(comboAmount, 1, 0)} + 'VND'"></span></p>
                     <p class="fw-bold mb-3">Tổng tiền: <span th:text="${#numbers.formatDecimal(totalAmount, 1, 0)} + 'VND'"></span></p>
 
-                    <div th:if="${available}" class="alert alert-success">Phòng còn trống trong khoảng ngày này</div>
-                    <div th:unless="${available}" class="alert alert-warning">Phòng đã được đặt trong khoảng ngày này, vui lòng chọn ngày khác</div>
+                    <div th:if="${available}" class="alert alert-success mb-2">Phòng còn trống trong khoảng ngày này</div>
+                    <!-- Ngay doi khach: bao gio nhan / tra som nhat co the -->
+                    <div th:if="${available and availability.earliestCheckIn != null}" class="alert alert-info small mb-2">
+                        <i class="bi bi-clock me-1"></i>Ngày <span th:text="${#temporals.format(checkIn, 'dd/MM')}"></span> khách trước trả phòng lúc
+                        <b th:text="${#temporals.format(availability.earliestCheckIn, 'HH:mm')}"></b> — bạn nhận phòng được từ giờ này.
+                    </div>
+                    <div th:if="${available and availability.latestCheckOut != null}" class="alert alert-info small mb-2">
+                        <i class="bi bi-clock me-1"></i>Ngày <span th:text="${#temporals.format(checkOut, 'dd/MM')}"></span> có khách nhận phòng lúc
+                        <b th:text="${#temporals.format(availability.latestCheckOut, 'HH:mm')}"></b> — vui lòng trả phòng trước giờ này.
+                    </div>
+                    <div th:unless="${available}" class="alert alert-warning mb-2">
+                        <span th:text="${availabilityMessage}">Phòng đã có khách trong khoảng ngày này</span>
+                        <div class="mt-2" th:if="${suggestCheckIn != null}">
+                            <a class="btn btn-sm btn-outline-primary"
+                               th:href="@{/customer/rooms/{id}(id=${room.id}, checkIn=${suggestCheckIn}, checkOut=${suggestCheckOut}, guests=${guests}, comboId=${selectedComboId})}"
+                               th:text="'Đặt từ ' + ${#temporals.format(suggestCheckIn, 'dd/MM')} + ' đến ' + ${#temporals.format(suggestCheckOut, 'dd/MM')}"></a>
+                        </div>
+                    </div>
 
                     <a th:if="${available}"
                        th:href="@{/customer/bookings/new(roomId=${room.id}, checkIn=${checkIn}, checkOut=${checkOut}, guests=${guests}, comboId=${selectedComboId})}"
@@ -209,6 +231,9 @@
         if (!calendar) return;
 
         const unavailableDates = new Set(/*[[${unavailableDates}]]*/ []);
+        // Ngay chi co don cho xac nhan giu cho (van tinh la khong dat duoc, nhung to mau rieng)
+        const pendingDates = new Set(/*[[${pendingDates}]]*/ []);
+        const maintenance = /*[[${room.status.name() == 'MAINTENANCE'}]]*/ false;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         let selectedCheckIn = calendar.dataset.checkIn || null;
@@ -315,10 +340,25 @@
 
                 const isPast = date < today;
                 const isUnavailable = unavailableDates.has(dateValue);
-                if (isPast || isUnavailable) {
-                    button.classList.add(isPast ? 'past' : 'unavailable');
+                const isPending = pendingDates.has(dateValue);
+                // Dem nay co khach nhung van tra phong duoc vao ngay nay (dem truoc do con trong)
+                const canBeCheckOut = isUnavailable && !isPast && selectedCheckIn && !selectedCheckOut
+                    && dateValue > selectedCheckIn && isRangeAvailable(selectedCheckIn, dateValue);
+                if (maintenance && !isPast) {
+                    button.classList.add('unavailable');
                     button.disabled = true;
-                    button.title = isPast ? 'Ngày đã qua' : 'Phòng đã có khách';
+                    button.title = 'Phòng đang bảo trì';
+                } else if (canBeCheckOut) {
+                    button.classList.add('checkout-only');
+                    if (isPending) button.classList.add('pending');
+                    button.title = 'Chọn làm ngày trả phòng (đêm này đã có khách)';
+                    button.addEventListener('click', () => selectDate(dateValue));
+                } else if (isPast || isUnavailable) {
+                    button.classList.add(isPast ? 'past' : 'unavailable');
+                    if (isPending && !isPast) button.classList.add('pending');
+                    button.disabled = true;
+                    button.title = isPast ? 'Ngày đã qua'
+                        : (isPending ? 'Đang có đơn chờ xác nhận giữ chỗ — có thể trống lại nếu đơn bị hủy' : 'Phòng đã có khách');
                 } else {
                     button.classList.add('available');
                     button.addEventListener('click', () => selectDate(dateValue));
@@ -334,6 +374,11 @@
 
         function renderCalendar() {
             monthsContainer.replaceChildren(renderMonth(visibleMonth));
+        }
+
+        if (maintenance) {
+            message.textContent = 'Phòng đang bảo trì, tạm ngưng nhận đặt. Vui lòng chọn phòng khác.';
+            message.className = 'small mb-2 text-danger';
         }
 
         document.getElementById('previousMonth').addEventListener('click', () => {

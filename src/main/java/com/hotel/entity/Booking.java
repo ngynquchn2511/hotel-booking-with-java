@@ -98,6 +98,11 @@ public class Booking {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // Ma ngau nhien trong link xem don gui cho khach (khach vang lai khong dang nhap) - khong doan duoc nhu id.
+    // Don tao truoc khi co tinh nang nay de null -> chi chu don da dang nhap moi xem duoc
+    @Column(name = "access_token", length = 32, unique = true)
+    private String accessToken;
+
     // Danh dau don moi tao (khach vua dat) de hien thi cham do thong bao cho admin/staff - tat khi staff mo xem chi tiet
     @Column(name = "new_booking", nullable = false)
     @Builder.Default
@@ -137,6 +142,9 @@ public class Booking {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        if (this.accessToken == null) {
+            this.accessToken = java.util.UUID.randomUUID().toString().replace("-", "");
+        }
         if (this.status == null) {
             this.status = BookingStatus.PENDING;
         }

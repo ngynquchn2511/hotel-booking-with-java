@@ -93,6 +93,38 @@ class HomestayFeaturesIT {
     }
 
     @Test
+    void roomDetail_pendingBooking_explainsAndSuggestsFreeDates() throws Exception {
+        guestBooksOnline(FRIDAY, FRIDAY.plusDays(2), "hold.it@mail.com");
+
+        mockMvc.perform(get("/customer/rooms/{id}", room.getId())
+                        .param("checkIn", FRIDAY.plusDays(1).toString()).param("checkOut", FRIDAY.plusDays(3).toString()))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("available", false))
+                .andExpect(model().attribute("pendingDates", org.hamcrest.Matchers.hasItems(FRIDAY.toString(), FRIDAY.plusDays(1).toString())))
+                .andExpect(content().string(containsString("đơn chờ xác nhận")))
+                .andExpect(content().string(containsString("Phòng trống trở lại từ 12:00")))
+                // Goi y dat tu ngay phong trong, giu nguyen 2 dem
+                .andExpect(model().attribute("suggestCheckIn", FRIDAY.plusDays(2)))
+                .andExpect(model().attribute("suggestCheckOut", FRIDAY.plusDays(4)));
+
+        // Ngay doi khach: nhan phong dung ngay khach truoc tra thi duoc, kem gio nhan som nhat
+        mockMvc.perform(get("/customer/rooms/{id}", room.getId())
+                        .param("checkIn", FRIDAY.plusDays(2).toString()).param("checkOut", FRIDAY.plusDays(3).toString()))
+                .andExpect(model().attribute("available", true))
+                .andExpect(content().string(containsString("bạn nhận phòng được từ giờ này")));
+    }
+
+    @Test
+    void roomDetail_maintenanceRoom_saysMaintenanceNotBooked() throws Exception {
+        room.setStatus(RoomStatus.MAINTENANCE);
+        roomRepository.save(room);
+        mockMvc.perform(get("/customer/rooms/{id}", room.getId())
+                        .param("checkIn", FRIDAY.toString()).param("checkOut", FRIDAY.plusDays(1).toString()))
+                .andExpect(model().attribute("available", false))
+                .andExpect(content().string(containsString("Phòng đang bảo trì")));
+    }
+
+    @Test
     void pricingPage_adminOnly() throws Exception {
         mockMvc.perform(get("/admin/pricing").with(user(new CustomUserDetails(staff))))
                 .andExpect(status().isForbidden());
@@ -137,7 +169,7 @@ class HomestayFeaturesIT {
         assertThat(b.getDepositDeadline()).isBetween(LocalDateTime.now().plusHours(23), LocalDateTime.now().plusHours(25));
 
         // Khach thay QR chuyen coc voi noi dung "HB<id> COC"
-        mockMvc.perform(get("/customer/bookings/{id}", b.getId()))
+        mockMvc.perform(get("/customer/bookings/{id}", b.getId()).param("token", b.getAccessToken()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Chuyển cọc để giữ phòng")))
                 .andExpect(content().string(containsString("HB" + b.getId() + " COC")))

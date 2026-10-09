@@ -29,7 +29,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -695,5 +697,91 @@ class BookingServiceTest {
         BusinessException ex = assertThrows(BusinessException.class, () -> bookingService.checkIn(100L));
         assertTrue(ex.getMessage().contains("khai báo lưu trú"));
         assertEquals(BookingStatus.CONFIRMED, b.getStatus());
+    }
+
+    // ---------- Kiem tra phong trong chi tiet ----------
+
+    private Booking active(long id, LocalDate in, LocalDate out, BookingStatus status) {
+        return Booking.builder().id(id).customer(customer).room(room).checkInDate(in).checkOutDate(out)
+                .checkInTime(LocalTime.of(14, 0)).checkOutTime(LocalTime.of(12, 0))
+                .totalAmount(bd(300000)).status(status).build();
+    }
+
+    @Test
+    void checkAvailability_pendingConflict_describesPendingAndFreeFromAfterChainedBookings() {
+        LocalDate d = LocalDate.now().plusDays(10);
+        // Don cho xac nhan d -> d+2, ngay d+2 lai co don da xac nhan noi tiep d+2 -> d+3
+        when(bookingRepository.findByRoomIdAndStatusIn(eq(10L), anyList())).thenReturn(List.of(
+                active(1L, d, d.plusDays(2), BookingStatus.PENDING),
+                active(2L, d.plusDays(2), d.plusDays(3), BookingStatus.CONFIRMED)));
+
+        BookingService.Availability a = bookingService.checkAvailability(room, d.plusDays(1), d.plusDays(2));
+
+        assertFalse(a.isAvailable());
+        assertTrue(a.isOnlyPendingConflicts());
+        assertEquals(LocalDateTime.of(d.plusDays(3), LocalTime.of(12, 0)), a.freeFrom());
+        String msg = a.describe();
+        assertTrue(msg.contains("đơn chờ xác nhận"), msg);
+        assertTrue(msg.contains("Phòng trống trở lại từ 12:00"), msg);
+    }
+
+    @Test
+    void checkAvailability_turnoverDays_giveEarliestCheckInAndLatestCheckOut() {
+        LocalDate d = LocalDate.now().plusDays(10);
+        when(bookingRepository.findByRoomIdAndStatusIn(eq(10L), anyList())).thenReturn(List.of(
+                active(1L, d.minusDays(2), d, BookingStatus.CONFIRMED),
+                active(2L, d.plusDays(2), d.plusDays(4), BookingStatus.PENDING)));
+
+        BookingService.Availability a = bookingService.checkAvailability(room, d, d.plusDays(2));
+
+        assertTrue(a.isAvailable());
+        assertEquals(LocalTime.of(12, 0), a.earliestCheckIn());
+        assertEquals(LocalTime.of(14, 0), a.latestCheckOut());
+    }
+
+    @Test
+    void checkAvailability_maintenanceRoom_notAvailableWithClearMessage() {
+        room.setStatus(RoomStatus.MAINTENANCE);
+        BookingService.Availability a = bookingService.checkAvailability(room, LocalDate.now().plusDays(1), LocalDate.now().plusDays(2));
+        assertFalse(a.isAvailable());
+        assertTrue(a.describe().contains("bảo trì"));
+    }
+
+    @Test
+    void createBooking_checkInBeforePreviousGuestLeaves_rejectedWithTime() {
+        LocalDate d = LocalDate.now().plusDays(10);
+        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(bookingRepository.existsOverlappingBooking(10L, d, d.plusDays(1))).thenReturn(false);
+        when(bookingRepository.findByRoomIdAndStatusIn(eq(10L), anyList()))
+                .thenReturn(List.of(active(1L, d.minusDays(1), d, BookingStatus.CONFIRMED)));
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> bookingService.createBooking(customer, 10L, d, d.plusDays(1),
+                LocalTime.of(10, 0), LocalTime.of(12, 0), 2, null, null, "A", "0901111111", "a@mail.com"));
+        assertTrue(ex.getMessage().contains("từ 12:00"), ex.getMessage());
+    }
+
+    @Test
+    void updateTimes_checkOutAfterNextGuestArrives_rejected() {
+        LocalDate d = LocalDate.now().plusDays(10);
+        Booking mine = active(100L, d, d.plusDays(1), BookingStatus.CONFIRMED);
+        when(bookingRepository.findById(100L)).thenReturn(Optional.of(mine));
+        when(bookingRepository.findByRoomIdAndStatusIn(eq(10L), anyList())).thenReturn(List.of(
+                mine, active(2L, d.plusDays(1), d.plusDays(2), BookingStatus.CONFIRMED)));
+
+        assertThrows(BusinessException.class,
+                () -> bookingService.updateTimes(100L, 1L, LocalTime.of(14, 0), LocalTime.of(15, 0)));
+    }
+
+    @Test
+    void confirmBooking_roomAlreadyConfirmedForOtherBooking_rejected() {
+        LocalDate d = LocalDate.now().plusDays(10);
+        Booking pending = active(100L, d, d.plusDays(1), BookingStatus.PENDING);
+        when(bookingRepository.findById(100L)).thenReturn(Optional.of(pending));
+        when(bookingRepository.findByRoomIdAndStatusIn(eq(10L), anyList())).thenReturn(List.of(
+                pending, active(7L, d, d.plusDays(1), BookingStatus.CONFIRMED)));
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> bookingService.confirmBooking(100L));
+        assertTrue(ex.getMessage().contains("#7"), ex.getMessage());
+        assertEquals(BookingStatus.PENDING, pending.getStatus());
     }
 }

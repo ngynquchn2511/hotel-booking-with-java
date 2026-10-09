@@ -5,6 +5,7 @@ import com.hotel.entity.Room;
 import com.hotel.entity.RoomImage;
 import com.hotel.entity.RoomStatus;
 import com.hotel.entity.RoomType;
+import com.hotel.entity.Booking;
 import com.hotel.entity.BookingStatus;
 import com.hotel.exception.BusinessException;
 import com.hotel.repository.BookingRepository;
@@ -86,6 +87,23 @@ public class RoomService {
                         BookingStatus.CHECKED_IN))
                 .stream()
                 .flatMap(booking -> booking.getCheckInDate().datesUntil(booking.getCheckOutDate()))
+                .distinct()
+                .sorted(Comparator.naturalOrder())
+                .toList();
+    }
+
+    // Cac ngay chi co don CHO XAC NHAN giu cho (chua co don xac nhan) - lich hien mau rieng de khach biet
+    public List<LocalDate> findPendingOnlyDates(Long roomId) {
+        List<Booking> active = bookingRepository.findByRoomIdAndStatusIn(roomId, List.of(
+                BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN));
+        java.util.Set<LocalDate> confirmed = active.stream()
+                .filter(b -> b.getStatus() != BookingStatus.PENDING)
+                .flatMap(b -> b.getCheckInDate().datesUntil(b.getCheckOutDate()))
+                .collect(java.util.stream.Collectors.toSet());
+        return active.stream()
+                .filter(b -> b.getStatus() == BookingStatus.PENDING)
+                .flatMap(b -> b.getCheckInDate().datesUntil(b.getCheckOutDate()))
+                .filter(d -> !confirmed.contains(d))
                 .distinct()
                 .sorted(Comparator.naturalOrder())
                 .toList();

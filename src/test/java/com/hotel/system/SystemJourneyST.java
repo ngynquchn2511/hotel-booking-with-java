@@ -21,6 +21,7 @@ class SystemJourneyST extends StBase {
     private LocalDate in;
     private LocalDate out;
     private Long bookingId;
+    private String guestBookingUrl;
     private final Browser guest = new Browser();
     private final Browser staff = new Browser();
     private final Browser customerBrowser = new Browser();
@@ -90,7 +91,10 @@ class SystemJourneyST extends StBase {
                 "guestPhone", "0966000111", "checkInTime", "14:00", "checkOutTime", "12:00", "discountCode", "HANHTRINH10"));
         assertThat(r.status()).isEqualTo(302);
         assertThat(r.location()).startsWith("/customer/bookings/");
-        bookingId = Long.valueOf(r.location().substring("/customer/bookings/".length()));
+        // Link tra ve co kem ma truy cap: /customer/bookings/<id>?token=<32 ky tu>
+        assertThat(r.location()).matches("/customer/bookings/\\d+\\?token=[0-9a-f]{32}");
+        guestBookingUrl = r.location();
+        bookingId = Long.valueOf(r.location().substring("/customer/bookings/".length(), r.location().indexOf('?')));
         Res page = guest.get(r.location());
         assertThat(page.body()).contains("Chờ xác nhận").contains("989100");
     }
@@ -98,7 +102,7 @@ class SystemJourneyST extends StBase {
     @Test
     @Order(6)
     @TcSteps("Khách khác thử đặt cùng phòng, cùng khoảng ngày")
-    @DisplayName("Chống đặt trùng phòng trên server thật ¦ khách thứ 2 đặt cùng phòng +20 → +22 ¦ Ở lại trang xác nhận, báo phòng vừa được người khác đặt")
+    @DisplayName("Chống đặt trùng phòng trên server thật ¦ khách thứ 2 đặt cùng phòng +20 → +22 ¦ Ở lại trang xác nhận, báo phòng đang có đơn chờ xác nhận và giờ phòng trống trở lại")
     void s06_doubleBooking() {
         Browser other = new Browser();
         other.get("/customer/rooms");
@@ -106,7 +110,8 @@ class SystemJourneyST extends StBase {
                 "guestName", "Khách Thứ Hai", "guestEmail", "thu2" + seq() + "@gmail.com", "guestPhone", "0966000222",
                 "checkInTime", "14:00", "checkOutTime", "12:00"));
         assertThat(r.status()).isEqualTo(200);
-        assertThat(r.body()).contains("vừa được người khác đặt");
+        assertThat(r.body()).contains("Phòng đã có khách trong khoảng ngày bạn chọn").contains("đơn chờ xác nhận")
+                .contains("Phòng trống trở lại từ 12:00");
     }
 
     @Test
@@ -134,7 +139,7 @@ class SystemJourneyST extends StBase {
     @TcSteps("Khách vãng lai mở lại link đơn của mình")
     @DisplayName("Khách xem đơn sau khi được xác nhận ¦ GET /customer/bookings/<id> ¦ Trạng thái \"Đã xác nhận\"")
     void s09_guestSeesConfirmed() {
-        assertThat(guest.get("/customer/bookings/" + bookingId).body()).contains("Đã xác nhận");
+        assertThat(guest.get(guestBookingUrl).body()).contains("Đã xác nhận");
     }
 
     @Test
@@ -154,7 +159,7 @@ class SystemJourneyST extends StBase {
     @TcSteps("Khách vãng lai mở lại trang đơn sau khi đã nhận phòng")
     @DisplayName("Khách không còn sửa/hủy được đơn đã check-in ¦ GET /customer/bookings/<id> ¦ Không còn nút \"Hủy đặt phòng\"")
     void s11_guestCannotCancelAfterCheckIn() {
-        assertThat(guest.get("/customer/bookings/" + bookingId).body()).doesNotContain("Hủy đặt phòng");
+        assertThat(guest.get(guestBookingUrl).body()).doesNotContain("Hủy đặt phòng");
     }
 
     @Test
@@ -205,7 +210,7 @@ class SystemJourneyST extends StBase {
         Res r = customerBrowser.post("/customer/bookings/new", form("roomId", room.getId().toString(), "checkIn", in.plusDays(5).toString(),
                 "checkOut", in.plusDays(6).toString(), "guestName", customer.getFullName(), "guestEmail", customer.getEmail(),
                 "guestPhone", customer.getPhoneNumber(), "checkInTime", "14:00", "checkOutTime", "12:00"));
-        customerBookingId = Long.valueOf(r.location().substring("/customer/bookings/".length()));
+        customerBookingId = Long.valueOf(r.location().substring("/customer/bookings/".length(), r.location().indexOf('?')));
         assertThat(customerBrowser.get("/customer/bookings").body()).contains("#" + customerBookingId);
     }
 

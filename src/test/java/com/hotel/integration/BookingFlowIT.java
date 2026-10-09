@@ -111,9 +111,49 @@ class BookingFlowIT {
                 .guestName("Guest").guestPhone("0900111222").guestEmail("guestacc@khachvanglai.local")
                 .totalAmount(BigDecimal.valueOf(400000)).discountAmount(BigDecimal.ZERO).status(BookingStatus.PENDING).build());
 
-        mockMvc.perform(get("/customer/bookings/{id}", booking.getId()))
+        // Khach vang lai xem duoc don khi link co dung ma truy cap
+        mockMvc.perform(get("/customer/bookings/{id}", booking.getId()).param("token", booking.getAccessToken()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("customer/booking-success"));
+    }
+
+    @Test
+    void viewBooking_anonymousWithoutOrWithWrongToken_notFoundAndNoPersonalData() throws Exception {
+        User owner = persistCustomer("secret.owner@mail.com");
+        Booking booking = bookingRepository.save(Booking.builder().customer(owner).room(room)
+                .checkInDate(LocalDate.now().plusDays(1)).checkOutDate(LocalDate.now().plusDays(2))
+                .checkInTime(LocalTime.of(14, 0)).checkOutTime(LocalTime.of(12, 0)).numberOfGuests(1)
+                .guestName("Nguoi Bi Lo Thong Tin").guestPhone("0911222333").guestEmail("secret.owner@mail.com")
+                .totalAmount(BigDecimal.valueOf(400000)).discountAmount(BigDecimal.ZERO).status(BookingStatus.PENDING).build());
+
+        // Doi so id tren URL khong con xem duoc don nguoi khac
+        mockMvc.perform(get("/customer/bookings/{id}", booking.getId()))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("0911222333"))));
+        mockMvc.perform(get("/customer/bookings/{id}", booking.getId()).param("token", "khongphaimacuadonnay00000000000"))
+                .andExpect(status().isNotFound());
+        // Ma cua don nay khong mo duoc don khac
+        mockMvc.perform(get("/customer/bookings/{id}", booking.getId() + 99999).param("token", booking.getAccessToken()))
+                .andExpect(status().isNotFound());
+        // Chu don dang nhap thi xem duoc khong can ma
+        mockMvc.perform(get("/customer/bookings/{id}", booking.getId()).with(user(new CustomUserDetails(owner))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("0911222333")));
+    }
+
+    @Test
+    void createBooking_asGuest_redirectLinkContainsWorkingAccessToken() throws Exception {
+        LocalDate in = LocalDate.now().plusDays(20);
+        String location = mockMvc.perform(post("/customer/bookings/new").with(csrf())
+                        .param("roomId", room.getId().toString())
+                        .param("checkIn", in.toString()).param("checkOut", in.plusDays(1).toString())
+                        .param("checkInTime", "14:00").param("checkOutTime", "12:00")
+                        .param("guestName", "Khach Token").param("guestPhone", "0909003344").param("guestEmail", "token.flow@mail.com"))
+                .andExpect(status().is3xxRedirection())
+                .andReturn().getResponse().getRedirectedUrl();
+
+        org.junit.jupiter.api.Assertions.assertTrue(location.matches("/customer/bookings/\\d+\\?token=[0-9a-f]{32}"), location);
+        mockMvc.perform(get(location)).andExpect(status().isOk()).andExpect(view().name("customer/booking-success"));
     }
 
     @Test

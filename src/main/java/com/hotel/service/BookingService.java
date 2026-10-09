@@ -55,6 +55,129 @@ public class BookingService {
         this.guestRepository = guestRepository;
     }
 
+    // Cac don dang giu phong (chua huy, chua tra phong)
+    private static final List<BookingStatus> HOLDING_STATUSES =
+            List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN);
+    private static final DateTimeFormatter DAY_FMT = DateTimeFormatter.ofPattern("dd/MM");
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
+
+    // Ket qua kiem tra phong trong cho 1 khoang ngay - dung chung cho trang chi tiet phong, trang xac nhan va luc luu don
+    // conflicts: cac don dang giu phong trung khoang ngay (co the la don CHO XAC NHAN)
+    // freeFrom: thoi diem phong trong tro lai sau cac don trung (tinh ca cac don noi tiep nhau)
+    // earliestCheckIn: ngay nhan phong co khach truoc tra phong -> chi nhan phong tu gio nay
+    // latestCheckOut: ngay tra phong co khach sau nhan phong -> phai tra phong truoc gio nay
+    public record Availability(boolean maintenance, List<Booking> conflicts, LocalDateTime freeFrom,
+                               LocalTime earliestCheckIn, LocalTime latestCheckOut) {
+
+        public boolean isAvailable() {
+            return !maintenance && conflicts.isEmpty();
+        }
+
+        public boolean isOnlyPendingConflicts() {
+            return !conflicts.isEmpty() && conflicts.stream().allMatch(b -> b.getStatus() == BookingStatus.PENDING);
+        }
+
+        // Cau thong bao cho khach khi khong dat duoc
+        public String describe() {
+            if (maintenance) {
+                return "Phòng đang bảo trì, tạm ngưng nhận đặt. Vui lòng chọn phòng khác";
+            }
+            if (conflicts.isEmpty()) {
+                return null;
+            }
+            StringBuilder sb = new StringBuilder("Phòng đã có khách trong khoảng ngày bạn chọn: ");
+            List<String> parts = new java.util.ArrayList<>();
+            for (Booking b : conflicts) {
+                parts.add((b.getStatus() == BookingStatus.PENDING ? "đơn chờ xác nhận " : "đơn đã xác nhận ")
+                        + b.getCheckInDate().format(DAY_FMT) + " – " + b.getCheckOutDate().format(DAY_FMT));
+            }
+            sb.append(String.join(", ", parts)).append(".");
+            if (freeFrom != null) {
+                sb.append(" Phòng trống trở lại từ ").append(freeFrom.format(TIME_FMT))
+                        .append(" ngày ").append(freeFrom.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))).append(".");
+            }
+            if (isOnlyPendingConflicts()) {
+                sb.append(" Đơn chờ xác nhận có thể bị hủy nếu khách không đặt cọc — bạn có thể quay lại kiểm tra sau.");
+            }
+            return sb.toString();
+        }
+    }
+
+    public Availability checkAvailability(Room room, LocalDate checkIn, LocalDate checkOut) {
+        return checkAvailability(room, checkIn, checkOut, null);
+    }
+
+    // excludeBookingId: bo qua chinh don dang sua (VD khach doi gio nhan/tra)
+    public Availability checkAvailability(Room room, LocalDate checkIn, LocalDate checkOut, Long excludeBookingId) {
+        List<Booking> active = bookingRepository.findByRoomIdAndStatusIn(room.getId(), HOLDING_STATUSES).stream()
+                .filter(b -> excludeBookingId == null || !excludeBookingId.equals(b.getId()))
+                .toList();
+
+        List<Booking> conflicts = active.stream()
+                .filter(b -> b.getCheckInDate().isBefore(checkOut) && b.getCheckOutDate().isAfter(checkIn))
+                .sorted(java.util.Comparator.comparing(Booking::getCheckInDate))
+                .toList();
+
+        // Phong trong lai sau don trung ket thuc muon nhat; neu ngay do lai co don khac noi tiep thi tinh tiep
+        LocalDateTime freeFrom = null;
+        if (!conflicts.isEmpty()) {
+            Booking last = conflicts.stream().max(java.util.Comparator.comparing(Booking::getCheckOutDate)).get();
+            LocalDate freeDate = last.getCheckOutDate();
+            LocalTime freeTime = last.getCheckOutTime();
+            boolean extended = true;
+            while (extended) {
+                extended = false;
+                for (Booking b : active) {
+                    if (!b.getCheckInDate().isAfter(freeDate) && b.getCheckOutDate().isAfter(freeDate)) {
+                        freeDate = b.getCheckOutDate();
+                        freeTime = b.getCheckOutTime();
+                        extended = true;
+                    }
+                }
+            }
+            freeFrom = LocalDateTime.of(freeDate, freeTime);
+        }
+
+        LocalTime earliestCheckIn = active.stream()
+                .filter(b -> b.getCheckOutDate().equals(checkIn))
+                .map(Booking::getCheckOutTime).max(LocalTime::compareTo).orElse(null);
+        LocalTime latestCheckOut = active.stream()
+                .filter(b -> b.getCheckInDate().equals(checkOut))
+                .map(Booking::getCheckInTime).min(LocalTime::compareTo).orElse(null);
+
+        return new Availability(room.getStatus() == RoomStatus.MAINTENANCE, conflicts, freeFrom,
+                earliestCheckIn, latestCheckOut);
+    }
+
+    // Ngay doi khach: khong cho nhan phong truoc gio khach truoc tra / tra phong sau gio khach sau nhan
+    private void checkTurnoverTimes(Availability availability, LocalDate checkInDate, LocalTime checkInTime,
+                                    LocalDate checkOutDate, LocalTime checkOutTime) {
+        if (availability.earliestCheckIn() != null && checkInTime.isBefore(availability.earliestCheckIn())) {
+            throw new BusinessException("Ngày " + checkInDate.format(DAY_FMT) + " khách trước trả phòng lúc "
+                    + availability.earliestCheckIn().format(TIME_FMT) + ". Vui lòng chọn giờ nhận phòng từ "
+                    + availability.earliestCheckIn().format(TIME_FMT) + " trở đi");
+        }
+        if (availability.latestCheckOut() != null && checkOutTime.isAfter(availability.latestCheckOut())) {
+            throw new BusinessException("Ngày " + checkOutDate.format(DAY_FMT) + " có khách nhận phòng lúc "
+                    + availability.latestCheckOut().format(TIME_FMT) + ". Vui lòng chọn giờ trả phòng trước "
+                    + availability.latestCheckOut().format(TIME_FMT));
+        }
+    }
+
+    // Chan xac nhan don neu phong da co don KHAC da xac nhan / dang o trung ngay (tranh trung phong that)
+    private void ensureNoConfirmedConflict(Booking booking) {
+        checkAvailability(booking.getRoom(), booking.getCheckInDate(), booking.getCheckOutDate(), booking.getId())
+                .conflicts().stream()
+                .filter(b -> b.getStatus() != BookingStatus.PENDING)
+                .findFirst()
+                .ifPresent(other -> {
+                    throw new BusinessException("Không thể xác nhận: phòng " + booking.getRoom().getRoomNumber()
+                            + " đã có đơn #" + other.getId() + " (" + other.getStatus().getVietnameseLabel() + ") từ "
+                            + other.getCheckInDate().format(DAY_FMT) + " đến " + other.getCheckOutDate().format(DAY_FMT)
+                            + ". Hãy liên hệ khách để đổi phòng/ngày hoặc hủy đơn này");
+                });
+    }
+
     public static final String DISCOUNT_ALREADY_USED_MESSAGE =
             "Bạn đã sử dụng mã giảm giá này rồi. Mỗi mã chỉ được dùng 1 lần cho mỗi khách hàng";
 
@@ -136,9 +259,13 @@ public class BookingService {
         }
 
         // BR-01 - kiem tra lai lan cuoi ngay truoc khi luu, phong truong hop phong bi dat mat trong luc khach dang xem
+        Availability availability = checkAvailability(room, checkInDate, checkOutDate);
         if (bookingRepository.existsOverlappingBooking(roomId, checkInDate, checkOutDate)) {
-            throw new BusinessException("Rất tiếc, phòng này vừa được người khác đặt mất trong khoảng ngày bạn chọn. Vui lòng chọn phòng hoặc ngày khác");
+            String detail = availability.describe();
+            throw new BusinessException(detail != null ? detail
+                    : "Rất tiếc, phòng này vừa được người khác đặt mất trong khoảng ngày bạn chọn. Vui lòng chọn phòng hoặc ngày khác");
         }
+        checkTurnoverTimes(availability, checkInDate, checkInTime, checkOutDate, checkOutTime);
 
         // Tien phong cong tung dem: ngay thuong / cuoi tuan / ngay le co gia khac nhau
         BigDecimal roomAmount = pricingService.roomAmount(room.getPrice(), checkInDate, checkOutDate);
@@ -215,6 +342,25 @@ public class BookingService {
         return booking;
     }
 
+    // Xem chi tiet don tu phia khach: hop le neu link co dung ma truy cap cua don, hoac nguoi xem
+    // dang dang nhap va la chu don. Moi truong hop khac bao "khong tim thay" (khong lo don co ton tai hay khong)
+    public Booking findForViewing(Long bookingId, String accessToken, Long viewerCustomerId) {
+        Booking booking = bookingRepository.findById(bookingId).orElse(null);
+        if (booking != null) {
+            if (accessToken != null && booking.getAccessToken() != null
+                    && java.security.MessageDigest.isEqual(
+                            accessToken.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                            booking.getAccessToken().getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
+                return booking;
+            }
+            if (viewerCustomerId != null && booking.getCustomer().getId().equals(viewerCustomerId)) {
+                return booking;
+            }
+        }
+        throw new BusinessException("Không tìm thấy đơn đặt phòng. Vui lòng mở đúng đường link trong email xác nhận, "
+                + "hoặc đăng nhập bằng tài khoản đã đặt phòng");
+    }
+
     public List<Booking> findAllForCustomer(Long customerId) {
         return bookingRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
     }
@@ -238,6 +384,8 @@ public class BookingService {
         if (newCheckInTime == null || newCheckOutTime == null) {
             throw new BusinessException("Vui lòng chọn đầy đủ giờ nhận và trả phòng");
         }
+        checkTurnoverTimes(checkAvailability(booking.getRoom(), booking.getCheckInDate(), booking.getCheckOutDate(), booking.getId()),
+                booking.getCheckInDate(), newCheckInTime, booking.getCheckOutDate(), newCheckOutTime);
         booking.setCheckInTime(newCheckInTime);
         booking.setCheckOutTime(newCheckOutTime);
         booking.setCheckInTimeChanged(true);
@@ -340,6 +488,7 @@ public class BookingService {
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new BusinessException("Chỉ có thể xác nhận đơn đang ở trạng thái Chờ xác nhận");
         }
+        ensureNoConfirmedConflict(booking);
         booking.setStatus(BookingStatus.CONFIRMED);
         Booking confirmedBooking = bookingRepository.save(booking);
         emailService.sendBookingConfirmation(confirmedBooking);
@@ -359,6 +508,7 @@ public class BookingService {
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new BusinessException("Chỉ ghi nhận đặt cọc cho đơn đang ở trạng thái Chờ xác nhận");
         }
+        ensureNoConfirmedConflict(booking);
         booking.setDepositPaidAt(LocalDateTime.now());
         booking.setStatus(BookingStatus.CONFIRMED);
         Booking confirmedBooking = bookingRepository.save(booking);

@@ -86,7 +86,8 @@ public final class AuditLabels {
             Map.entry("idType", "Loại giấy tờ"),
             Map.entry("idNumber", "Số giấy tờ"),
             Map.entry("nationality", "Quốc tịch"),
-            Map.entry("address", "Nơi thường trú")
+            Map.entry("address", "Nơi thường trú"),
+            Map.entry("accessToken", "Mã xem đơn")
     );
 
     private AuditLabels() {

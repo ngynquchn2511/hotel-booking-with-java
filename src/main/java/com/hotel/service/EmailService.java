@@ -42,6 +42,10 @@ public class EmailService {
     @Value("${app.payment.account-name:HOMESTAY MAY}")
     private String accountName;
 
+    // Dia chi website de tao link xem don trong email (VD https://mayhomestay.vn). De trong thi khong gui link
+    @Value("${app.base-url:}")
+    private String baseUrl;
+
     public EmailService(JavaMailSender mailSender,
                         @Value("${spring.mail.username:}") String senderEmail,
                         @Value("${spring.mail.password:}") String senderPassword) {
@@ -272,6 +276,12 @@ public class EmailService {
         sb.append("Tổng tiền: ").append(money(booking.getTotalAmount())).append(" VND\n\n");
         sb.append("Trạng thái đơn: ").append(booking.getStatus().getVietnameseLabel()).append("\n\n");
         appendDepositInfo(sb, booking);
+        if (baseUrl != null && !baseUrl.isBlank() && booking.getAccessToken() != null) {
+            sb.append("Xem chi tiết đơn: ").append(baseUrl.replaceAll("/+$", ""))
+                    .append("/customer/bookings/").append(booking.getId())
+                    .append("?token=").append(booking.getAccessToken()).append("\n");
+            sb.append("(Vui lòng không chia sẻ đường link này.)\n\n");
+        }
         sb.append("Trân trọng,\nHomestay Mây");
         return sb.toString();
     }

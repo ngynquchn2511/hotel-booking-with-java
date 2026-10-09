@@ -21,6 +21,19 @@
     </div>
 
     <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+    <!-- Bao truoc khi khach dien form: phong da co khach / bao tri trong khoang ngay nay -->
+    <div th:if="${errorMessage == null and availability != null and !availability.available}" class="alert alert-warning">
+        <span th:text="${availabilityMessage}"></span>
+        <a th:href="@{/customer/rooms/{id}(id=${room.id})}" class="d-block mt-1">Chọn lại ngày khác</a>
+    </div>
+    <div th:if="${availability != null and availability.available and (availability.earliestCheckIn != null or availability.latestCheckOut != null)}"
+         class="alert alert-info small">
+        <i class="bi bi-clock me-1"></i>
+        <span th:if="${availability.earliestCheckIn != null}"
+              th:text="'Ngày ' + ${#temporals.format(checkIn, 'dd/MM')} + ' khách trước trả phòng lúc ' + ${#temporals.format(availability.earliestCheckIn, 'HH:mm')} + ' — nhận phòng từ giờ này trở đi. '"></span>
+        <span th:if="${availability.latestCheckOut != null}"
+              th:text="'Ngày ' + ${#temporals.format(checkOut, 'dd/MM')} + ' có khách nhận phòng lúc ' + ${#temporals.format(availability.latestCheckOut, 'HH:mm')} + ' — vui lòng trả phòng trước giờ này.'"></span>
+    </div>
 
     <div class="bg-white p-4 rounded shadow-sm mb-4 ticket">
         <h5 class="fw-bold" th:text="'Phòng ' + ${room.roomNumber} + ' - ' + ${room.roomType.name}"></h5>

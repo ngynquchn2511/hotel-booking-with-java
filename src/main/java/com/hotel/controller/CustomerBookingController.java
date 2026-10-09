@@ -96,6 +96,16 @@ public class CustomerBookingController {
         BookingConfirmRequest request = new BookingConfirmRequest();
         request.setCheckInTime(DEFAULT_CHECK_IN_TIME);
         request.setCheckOutTime(DEFAULT_CHECK_OUT_TIME);
+        // Ngay doi khach: mac dinh nhan phong khong som hon gio khach truoc tra, tra phong khong muon hon gio khach sau nhan
+        BookingService.Availability availability = (BookingService.Availability) model.getAttribute("availability");
+        if (availability != null) {
+            if (availability.earliestCheckIn() != null && DEFAULT_CHECK_IN_TIME.isBefore(availability.earliestCheckIn())) {
+                request.setCheckInTime(availability.earliestCheckIn());
+            }
+            if (availability.latestCheckOut() != null && DEFAULT_CHECK_OUT_TIME.isAfter(availability.latestCheckOut())) {
+                request.setCheckOutTime(availability.latestCheckOut());
+            }
+        }
         // Neu da dang nhap thi dien san thong tin tu tai khoan, khach van sua duoc.
         // Neu chua dang nhap (khach vang lai) thi de trong, khach tu nhap.
         if (userDetails != null) {
@@ -139,7 +149,8 @@ public class CustomerBookingController {
                     guests, comboId, request.getDiscountCode(),
                     request.getGuestName(), request.getGuestPhone(), request.getGuestEmail()
             );
-            return "redirect:/customer/bookings/" + booking.getId();
+            // Kem ma truy cap de khach vang lai xem lai duoc don (khong can dang nhap)
+            return "redirect:/customer/bookings/" + booking.getId() + "?token=" + booking.getAccessToken();
         } catch (BusinessException ex) {
             model.addAttribute("errorMessage", ex.getMessage());
             rebuildModel(model, roomId, checkIn, checkOut, guests, comboId);
@@ -188,12 +199,13 @@ public class CustomerBookingController {
     }
 
     // Trang xem chi tiet 1 booking (dung lam trang "dat phong thanh cong") - KHONG bat buoc dang nhap.
-    // Neu da dang nhap thi kiem tra dung chu don. Neu la khach vang lai thi xem truc tiep qua link (khong kiem tra chu so huu).
+    // Khach vang lai phai co dung ma truy cap (?token=... trong link sau khi dat / trong email);
+    // khach da dang nhap thi xem duoc don cua chinh minh. Khong cho xem don nguoi khac chi bang cach doi id.
     @GetMapping("/{id}")
-    public String viewBooking(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
-        Booking booking = (userDetails != null)
-                ? bookingService.findByIdForCustomer(id, userDetails.getUser().getId())
-                : bookingService.findById(id);
+    public String viewBooking(@PathVariable Long id, @RequestParam(required = false) String token,
+                              @AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
+        Booking booking = bookingService.findForViewing(id, token,
+                userDetails != null ? userDetails.getUser().getId() : null);
 
         model.addAttribute("booking", booking);
         model.addAttribute("payment", paymentService.findByBookingId(id).orElse(null));
@@ -304,6 +316,12 @@ public class CustomerBookingController {
             var combo = comboService.findById(comboId);
             model.addAttribute("combo", combo);
             subtotal = subtotal.add(combo.getPrice());
+        }
+        // Bao truoc neu phong khong con trong / gio nhan-tra bi gioi han do co khach truoc-sau trong ngay
+        if (nights > 0) {
+            BookingService.Availability availability = bookingService.checkAvailability(room, checkIn, checkOut);
+            model.addAttribute("availability", availability);
+            model.addAttribute("availabilityMessage", availability.describe());
         }
         var settings = pricingService.getSettings();
         model.addAttribute("depositPercent", settings.getDepositPercent());
