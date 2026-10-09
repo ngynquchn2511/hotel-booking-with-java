@@ -13,7 +13,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.upload.base-dir}")
     private String baseUploadDir;
 
-    @Value("${app.page-images.dir}")
+    // Thu muc anh ngoai project (tuy chon) - neu co, anh trong do duoc uu tien hon anh di kem project
+    @Value("${app.page-images.dir:}")
     private String pageImagesDir;
 
     @Override
@@ -22,9 +23,13 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:" + uploadPath + "/");
 
-        // Thu muc anh nen tung trang, nam ngoai project (VD: D:/CongNgheJava/img)
-        String pageImagesPath = Paths.get(pageImagesDir).toAbsolutePath().normalize().toString();
-        registry.addResourceHandler("/page-images/**")
-                .addResourceLocations("file:" + pageImagesPath + "/");
+        // Anh nen tung trang: tim trong thu muc ngoai (neu cau hinh) truoc, khong co thi lay anh
+        // di kem project (src/main/resources/static/page-images) - clone ve la chay duoc, khong can chep anh
+        var pageImages = registry.addResourceHandler("/page-images/**");
+        if (pageImagesDir != null && !pageImagesDir.isBlank()) {
+            String pageImagesPath = Paths.get(pageImagesDir).toAbsolutePath().normalize().toString();
+            pageImages.addResourceLocations("file:" + pageImagesPath + "/");
+        }
+        pageImages.addResourceLocations("classpath:/static/page-images/");
     }
 }

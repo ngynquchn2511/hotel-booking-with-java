@@ -83,6 +83,16 @@ class HomestayFeaturesIT {
     }
 
     @Test
+    void pageImages_servedFromProjectWithoutExternalFolder() throws Exception {
+        // Moi truong test tro app.page-images.dir toi thu muc khong ton tai -> phai lay anh di kem project
+        mockMvc.perform(get("/page-images/tamdao-lau-dai.jpg"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("image/jpeg"));
+        mockMvc.perform(get("/page-images/trangchu.jpg"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void pricingPage_adminOnly() throws Exception {
         mockMvc.perform(get("/admin/pricing").with(user(new CustomUserDetails(staff))))
                 .andExpect(status().isForbidden());
