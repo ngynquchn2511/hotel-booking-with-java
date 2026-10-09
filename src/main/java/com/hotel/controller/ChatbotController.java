@@ -8,10 +8,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-// API cho widget chat tu van o giao dien khach hang - khong can dang nhap
+// API cho widget chat tu van "May" o giao dien khach hang - khong can dang nhap
 @RestController
 @RequestMapping("/api/chatbot")
 public class ChatbotController {
+
+    // Gioi han do dai cau hoi de tranh gui noi dung qua dai
+    private static final int MAX_MESSAGE_LENGTH = 500;
 
     private final ChatbotService chatbotService;
 
@@ -19,9 +22,17 @@ public class ChatbotController {
         this.chatbotService = chatbotService;
     }
 
+    // Tra ve: reply (noi dung), actions (nut lien ket [{label, url}]), suggestions (cau hoi goi y tiep theo)
     @PostMapping("/ask")
-    public Map<String, String> ask(@RequestBody Map<String, String> body) {
-        String reply = chatbotService.answer(body.get("message"));
-        return Map.of("reply", reply);
+    public Map<String, Object> ask(@RequestBody Map<String, String> body) {
+        String message = body.get("message");
+        if (message != null && message.length() > MAX_MESSAGE_LENGTH) {
+            message = message.substring(0, MAX_MESSAGE_LENGTH);
+        }
+        ChatbotService.Reply reply = chatbotService.reply(message);
+        return Map.of(
+                "reply", reply.text(),
+                "actions", reply.actions(),
+                "suggestions", reply.suggestions());
     }
 }

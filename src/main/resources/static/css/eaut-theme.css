@@ -236,7 +236,6 @@ body.eaut .text-uppercase.text-primary { color: var(--ink) !important; }
 body.eaut .col-lg-7.bg-white { border: 0 !important; box-shadow: none !important; border-radius: 0 !important; }
 
 /* ---------- Chatbot ---------- */
-body:is(.eaut, .eaut-chrome) #chatbotBubble { background: var(--baby); color: var(--ink); border: 1.5px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); }
 
 /* ---------- Hieu ung ---------- */
 body.eaut main > * { animation: eautRise .5s ease both; }
