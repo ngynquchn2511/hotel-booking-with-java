@@ -124,7 +124,70 @@
             background: #0d6efd;
             color: #fff;
         }
+        /* Nut nhan Zalo noi phia tren nut chatbot - mau xanh nhan dien cua Zalo */
+        #zaloButton {
+            position: fixed;
+            right: 20px;
+            bottom: 82px;
+            z-index: 1079;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px 8px 8px;
+            border-radius: 999px;
+            background: #fff;
+            color: #0068ff;
+            font-weight: 700;
+            text-decoration: none;
+            border: 1.5px solid #0068ff;
+            box-shadow: 0 6px 18px rgba(0, 104, 255, .25);
+            transition: transform .15s;
+        }
+        #zaloButton:hover { transform: translateY(-2px); }
+        #zaloButton .zalo-mark {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #0068ff;
+            color: #fff;
+            display: grid;
+            place-items: center;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: -.02em;
+        }
+        #zaloButton::before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 6px;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid #0068ff;
+            animation: zaloPulse 2s ease-out infinite;
+            pointer-events: none;
+        }
+        @keyframes zaloPulse { from { opacity: .6; transform: scale(.9); } to { opacity: 0; transform: scale(1.6); } }
+        @media (prefers-reduced-motion: reduce) { #zaloButton::before { animation: none; display: none; } }
+        /* Man hinh dien thoai: chi hien bieu tuong Zalo cho gon */
+        @media (max-width: 576px) {
+            #zaloButton { padding: 6px; }
+            #zaloButton .zalo-label { display: none; }
+        }
+        /* Khi mo khung chat thi an nut Zalo de khong de len khung */
+        body.chatbot-panel-open #zaloButton { display: none; }
     </style>
+
+    <!-- So Zalo lay tu cau hinh app.contact.zalo-phone (bien moi truong ZALO_PHONE); de trong thi an nut -->
+    <th:block th:with="zaloPhone=${@environment.getProperty('app.contact.zalo-phone')}">
+    <a th:if="${zaloPhone != null and !#strings.isEmpty(zaloPhone)}"
+       th:href="'https://zalo.me/' + ${zaloPhone}" id="zaloButton" target="_blank" rel="noopener"
+       aria-label="Nhắn tin Zalo cho Homestay Mây" title="Nhắn Zalo cho homestay">
+        <span class="zalo-mark">Zalo</span>
+        <span class="zalo-label">Nhắn Zalo</span>
+    </a>
+    </th:block>
 
     <input type="hidden" id="chatbotCsrfToken" th:value="${_csrf != null ? _csrf.token : ''}">
     <input type="hidden" id="chatbotCsrfHeader" th:value="${_csrf != null ? _csrf.headerName : ''}">
@@ -265,6 +328,7 @@
             bubble.addEventListener('click', function () {
                 var opening = !panel.classList.contains('chatbot-open');
                 panel.classList.toggle('chatbot-open');
+                document.body.classList.toggle('chatbot-panel-open', panel.classList.contains('chatbot-open'));
                 if (opening && messages.children.length === 0) {
                     appendMessage('Tôi có thể giúp gì cho bạn?', 'bot');
                     appendSuggestionBatch(quickReplies);
@@ -273,6 +337,7 @@
 
             closeBtn.addEventListener('click', function () {
                 panel.classList.remove('chatbot-open');
+                document.body.classList.remove('chatbot-panel-open');
             });
 
             form.addEventListener('submit', function (e) {

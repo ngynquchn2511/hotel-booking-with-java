@@ -125,6 +125,16 @@ class HomestayFeaturesIT {
     }
 
     @Test
+    void zaloButton_shownOnCustomerPages() throws Exception {
+        mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("https://zalo.me/0337196258")))
+                .andExpect(content().string(containsString("Nhắn Zalo")));
+        mockMvc.perform(get("/about"))
+                .andExpect(content().string(containsString("0337 196 258")));
+    }
+
+    @Test
     void pricingPage_adminOnly() throws Exception {
         mockMvc.perform(get("/admin/pricing").with(user(new CustomUserDetails(staff))))
                 .andExpect(status().isForbidden());

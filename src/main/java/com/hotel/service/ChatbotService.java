@@ -35,6 +35,7 @@ public class ChatbotService {
     private static final String HOTEL_NAME = "Homestay Mây";
     private static final String HOTEL_ADDRESS = "Dốc Tam Đảo, thị trấn Tam Đảo, Vĩnh Phúc";
     private static final String HOTEL_PHONE = "0338932368";
+    private static final String HOTEL_ZALO = "0337196258";
     private static final String HOTEL_EMAIL = "mayhomestaytd@gmail.com";
     private static final String HOTEL_FACILITIES = "BBQ ngoài trời, Ban công ngắm mây, Đốt lửa trại, Bếp chung, Thuê xe máy, Wi-Fi và chỗ đỗ xe miễn phí";
     private static final String CHECK_IN_TIME = "14h chiều (14:00)";
@@ -77,7 +78,7 @@ public class ChatbotService {
         boolean askCombo = containsAny(question, "combo", "do an", "an uong", "buffet");
         boolean askPromotion = containsAny(question, "uu dai", "khuyen mai", "giam gia", "ma giam gia", "voucher", "discount");
         boolean askAddress = containsAny(question, "dia chi", "o dau", "vi tri khach san", "khach san o", "vi tri homestay", "homestay o");
-        boolean askContact = containsAny(question, "so dien thoai", "hotline", "lien he", " sdt ", "dien thoai", "email");
+        boolean askContact = containsAny(question, "so dien thoai", "hotline", "lien he", " sdt ", "dien thoai", "email", "zalo");
         boolean askCheckTime = containsAny(question, "gio nhan", "gio tra", "nhan tra phong", "check in", "check out",
                 "may gio nhan", "may gio tra");
 
@@ -107,7 +108,7 @@ public class ChatbotService {
         }
         if (askContact) {
             sections.add("Bạn có thể liên hệ " + HOTEL_NAME + " qua số điện thoại " + HOTEL_PHONE
-                    + " hoặc email " + HOTEL_EMAIL + ".");
+                    + ", Zalo " + HOTEL_ZALO + " hoặc email " + HOTEL_EMAIL + ".");
         }
         if (askCheckTime) {
             sections.add("Giờ nhận phòng tiêu chuẩn: " + CHECK_IN_TIME + " — Giờ trả phòng tiêu chuẩn: " + CHECK_OUT_TIME

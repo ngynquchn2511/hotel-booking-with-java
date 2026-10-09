@@ -101,6 +101,7 @@ class ChatbotServiceParamTest {
             "Số điện thoại liên hệ là gì?|Hỏi liên hệ|0338932368",
             "hotline khach san|Hỏi hotline (không dấu)|0338932368",
             "cho xin email|Hỏi email|mayhomestaytd@gmail.com",
+            "có zalo không|Hỏi Zalo|Zalo 0337196258",
             "Mấy giờ nhận phòng?|Hỏi giờ nhận phòng|Giờ nhận phòng tiêu chuẩn: 14h chiều",
             "may gio tra phong|Hỏi giờ trả phòng (không dấu)|Giờ trả phòng tiêu chuẩn: 12h trưa",
             "CHECK IN LÚC NÀO|Hỏi check-in (chữ hoa)|Giờ nhận phòng tiêu chuẩn",
