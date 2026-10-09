@@ -3,6 +3,7 @@ package com.hotel.controller;
 import com.hotel.exception.BusinessException;
 import com.hotel.repository.RoomTypeRepository;
 import com.hotel.service.ComboService;
+import com.hotel.service.ReviewService;
 import com.hotel.service.RoomService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,12 +21,14 @@ public class CustomerController {
     private final RoomService roomService;
     private final RoomTypeRepository roomTypeRepository;
     private final ComboService comboService;
+    private final ReviewService reviewService;
 
     public CustomerController(RoomService roomService, RoomTypeRepository roomTypeRepository,
-                               ComboService comboService) {
+                               ComboService comboService, ReviewService reviewService) {
         this.roomService = roomService;
         this.roomTypeRepository = roomTypeRepository;
         this.comboService = comboService;
+        this.reviewService = reviewService;
     }
 
     // Trang tim phong - hien form tim kiem, neu co du checkIn/checkOut thi hien ket qua
@@ -80,6 +83,9 @@ public class CustomerController {
         model.addAttribute("guests", guests);
         model.addAttribute("combos", comboService.findActive());
         model.addAttribute("selectedComboId", comboId);
+        // Danh gia cua khach da o cung loai phong (diem trung binh + 5 nhan xet moi nhat)
+        model.addAttribute("ratingStats", reviewService.statsForRoomType(room.getRoomType().getId()));
+        model.addAttribute("roomReviews", reviewService.findLatestForRoomType(room.getRoomType().getId(), 5));
 
         if (checkIn != null && checkOut != null) {
             try {

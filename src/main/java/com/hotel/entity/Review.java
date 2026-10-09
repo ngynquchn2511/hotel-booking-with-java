@@ -38,8 +38,17 @@ public class Review {
     @Column(length = 1000)
     private String comment;
 
+    // Admin an danh gia (spam, ngon tu khong phu hop...). Kieu Boolean cho phep null = dang hien,
+    // de ddl-auto=update them cot vao bang da co du lieu khong bi loi
+    @Column(name = "hidden")
+    private Boolean hidden;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public boolean isHidden() {
+        return Boolean.TRUE.equals(hidden);
+    }
 
     @PrePersist
     protected void onCreate() {

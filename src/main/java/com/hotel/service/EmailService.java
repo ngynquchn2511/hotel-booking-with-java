@@ -1,6 +1,7 @@
 package com.hotel.service;
 
 import com.hotel.entity.Booking;
+import com.hotel.entity.BookingCharge;
 import com.hotel.entity.BookingStatus;
 import com.hotel.entity.Payment;
 import com.hotel.entity.User;
@@ -19,6 +20,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Locale;
 
 @Service
@@ -96,7 +98,7 @@ public class EmailService {
 
     // Gui hoa don thanh toan (HTML) sau khi check-out. Tra ve true neu gui thanh cong.
     // Gui that bai chi ghi log, khong lam hong luong check-out.
-    public boolean sendInvoice(Booking booking, Payment payment) {
+    public boolean sendInvoice(Booking booking, Payment payment, List<BookingCharge> charges) {
         if (booking.getGuestEmail() == null || booking.getGuestEmail().isBlank()) {
             log.warn("Khong gui hoa don cho booking #{} vi email nguoi nhan trong", booking.getId());
             return false;
@@ -112,7 +114,7 @@ public class EmailService {
             helper.setFrom(senderEmail, "Hotel Booking");
             helper.setTo(booking.getGuestEmail());
             helper.setSubject("Hotel Booking - Hóa đơn " + payment.getInvoiceNo() + " (đơn #" + booking.getId() + ")");
-            helper.setText(buildInvoiceHtml(booking, payment), true);
+            helper.setText(buildInvoiceHtml(booking, payment, charges), true);
             mailSender.send(message);
             log.info("Da gui hoa don {} toi {}", payment.getInvoiceNo(), booking.getGuestEmail());
             return true;
@@ -123,7 +125,7 @@ public class EmailService {
     }
 
     // Email HTML dung inline style (Gmail bo qua the <style>), cung tong trang + xanh baby voi website
-    private String buildInvoiceHtml(Booking booking, Payment payment) {
+    private String buildInvoiceHtml(Booking booking, Payment payment, List<BookingCharge> charges) {
         long nights = ChronoUnit.DAYS.between(booking.getCheckInDate(), booking.getCheckOutDate());
         BigDecimal roomAmount = booking.getRoom().getPrice().multiply(BigDecimal.valueOf(nights));
         DateTimeFormatter date = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -140,6 +142,9 @@ public class EmailService {
                 && booking.getDiscountAmount().signum() > 0) {
             rows.append(invoiceRow("Giảm giá (mã " + booking.getDiscountCode().getCode() + ")", "",
                     "-" + money(booking.getDiscountAmount())));
+        }
+        for (BookingCharge charge : charges) {
+            rows.append(invoiceRow("Phụ phí: " + charge.getLabel(), "1", money(charge.getAmount())));
         }
 
         return """

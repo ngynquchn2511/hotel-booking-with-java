@@ -77,6 +77,12 @@
             <td colspan="3" th:text="'Giảm giá (mã ' + ${booking.discountCode.code} + ')'"></td>
             <td class="text-end" th:text="'-' + ${#numbers.formatDecimal(booking.discountAmount, 1, 0)}"></td>
         </tr>
+        <tr th:each="c : ${charges}">
+            <td th:text="'Phụ phí: ' + ${c.label}"></td>
+            <td class="text-end" th:text="${#numbers.formatDecimal(c.amount, 1, 0)}"></td>
+            <td class="text-end">1</td>
+            <td class="text-end" th:text="${#numbers.formatDecimal(c.amount, 1, 0)}"></td>
+        </tr>
         </tbody>
         <tfoot>
         <tr class="fw-bold fs-5">

@@ -2,6 +2,7 @@ package com.hotel.controller;
 
 import com.hotel.entity.Booking;
 import com.hotel.entity.BookingStatus;
+import com.hotel.entity.ChargeType;
 import com.hotel.entity.PaymentMethod;
 import com.hotel.exception.BusinessException;
 import com.hotel.service.BookingService;
@@ -12,6 +13,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -90,7 +92,38 @@ public class AdminBookingController {
         model.addAttribute("bankId", paymentService.getBankId());
         model.addAttribute("accountNo", paymentService.getAccountNo());
         model.addAttribute("accountName", paymentService.getAccountName());
+        model.addAttribute("charges", paymentService.findCharges(id));
+        model.addAttribute("chargesTotal", paymentService.chargesTotal(id));
+        model.addAttribute("amountDue", paymentService.amountDue(booking));
+        model.addAttribute("chargeTypes", ChargeType.values());
         return "admin/bookings/checkout";
+    }
+
+    // Them phu phi phat sinh truoc khi thu tien (minibar, giat ui, hu hong, tra phong muon...)
+    @PostMapping("/{id}/charges")
+    public String addCharge(@PathVariable Long id,
+                            @RequestParam(required = false) ChargeType type,
+                            @RequestParam(required = false) String description,
+                            @RequestParam(required = false) BigDecimal amount,
+                            RedirectAttributes redirectAttributes) {
+        try {
+            paymentService.addCharge(id, type, description, amount);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã thêm phụ phí");
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/bookings/" + id + "/check-out#phu-phi";
+    }
+
+    @PostMapping("/{id}/charges/{chargeId}/delete")
+    public String removeCharge(@PathVariable Long id, @PathVariable Long chargeId, RedirectAttributes redirectAttributes) {
+        try {
+            paymentService.removeCharge(id, chargeId);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa phụ phí");
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/bookings/" + id + "/check-out#phu-phi";
     }
 
     // Khong gui phuong thuc thanh toan -> mac dinh tien mat (thu tai quay)

@@ -14,6 +14,7 @@ public final class AuditLabels {
             "DiscountCode", "Mã giảm giá",
             "Payment", "Thanh toán",
             "Review", "Đánh giá",
+            "BookingCharge", "Phụ phí",
             "User", "Tài khoản"
     );
 
@@ -64,6 +65,8 @@ public final class AuditLabels {
             Map.entry("paymentDate", "Ngày thanh toán"),
             Map.entry("rating", "Số sao"),
             Map.entry("comment", "Nhận xét"),
+            Map.entry("hidden", "Ẩn"),
+            Map.entry("type", "Loại"),
             Map.entry("createdAt", "Ngày tạo")
     );
 

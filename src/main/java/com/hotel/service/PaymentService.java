@@ -2,6 +2,7 @@ package com.hotel.service;
 
 import com.hotel.entity.*;
 import com.hotel.exception.BusinessException;
+import com.hotel.repository.BookingChargeRepository;
 import com.hotel.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -24,10 +25,12 @@ public class PaymentService {
 
     // Noi dung chuyen khoan kem ma don de nhan vien doi chieu tien vao la cua don nao, VD: "HB15"
     private static final String TRANSFER_PREFIX = "HB";
+    private static final BigDecimal MAX_CHARGE = new BigDecimal("100000000");
 
     private final PaymentRepository paymentRepository;
     private final BookingService bookingService;
     private final EmailService emailService;
+    private final BookingChargeRepository chargeRepository;
 
     @Value("${app.payment.bank-id:MB}")
     private String bankId;
@@ -38,10 +41,12 @@ public class PaymentService {
     @Value("${app.payment.account-name:KHACH SAN HOTEL BOOKING}")
     private String accountName;
 
-    public PaymentService(PaymentRepository paymentRepository, BookingService bookingService, EmailService emailService) {
+    public PaymentService(PaymentRepository paymentRepository, BookingService bookingService, EmailService emailService,
+                          BookingChargeRepository chargeRepository) {
         this.paymentRepository = paymentRepository;
         this.bookingService = bookingService;
         this.emailService = emailService;
+        this.chargeRepository = chargeRepository;
     }
 
     public Optional<Payment> findByBookingId(Long bookingId) {
@@ -69,7 +74,7 @@ public class PaymentService {
     // Anh QR VietQR (chuan Napas) - app ngan hang nao quet cung tu dien san so tien va noi dung chuyen khoan
     public String buildQrUrl(Booking booking) {
         return "https://img.vietqr.io/image/" + bankId + "-" + accountNo + "-compact2.png"
-                + "?amount=" + booking.getTotalAmount().setScale(0, RoundingMode.HALF_UP).toPlainString()
+                + "?amount=" + amountDue(booking).setScale(0, RoundingMode.HALF_UP).toPlainString()
                 + "&addInfo=" + URLEncoder.encode(transferContent(booking), StandardCharsets.UTF_8)
                 + "&accountName=" + URLEncoder.encode(accountName, StandardCharsets.UTF_8);
     }
@@ -84,6 +89,66 @@ public class PaymentService {
 
     public String getAccountName() {
         return accountName;
+    }
+
+    // ===== Phu phi phat sinh (minibar, giat ui, hu hong, tra phong muon...) =====
+
+    public List<BookingCharge> findCharges(Long bookingId) {
+        return chargeRepository.findByBookingIdOrderByCreatedAtAsc(bookingId);
+    }
+
+    public BigDecimal chargesTotal(Long bookingId) {
+        return findCharges(bookingId).stream().map(BookingCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    // Tong khach phai tra khi check-out = tien don (phong + combo - giam gia) + phu phi
+    public BigDecimal amountDue(Booking booking) {
+        return booking.getTotalAmount().add(chargesTotal(booking.getId()));
+    }
+
+    @Transactional
+    public BookingCharge addCharge(Long bookingId, ChargeType type, String description, BigDecimal amount) {
+        Booking booking = requireChargeable(bookingId);
+        if (type == null) {
+            throw new BusinessException("Vui lòng chọn loại phụ phí");
+        }
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("Số tiền phụ phí phải lớn hơn 0");
+        }
+        if (amount.compareTo(MAX_CHARGE) > 0) {
+            throw new BusinessException("Số tiền phụ phí quá lớn, vui lòng kiểm tra lại");
+        }
+        String text = description == null ? null : description.trim();
+        if (text != null && text.length() > 200) {
+            throw new BusinessException("Ghi chú phụ phí tối đa 200 ký tự");
+        }
+        return chargeRepository.save(BookingCharge.builder()
+                .booking(booking)
+                .type(type)
+                .description(text == null || text.isEmpty() ? null : text)
+                .amount(amount.setScale(0, RoundingMode.HALF_UP))
+                .build());
+    }
+
+    @Transactional
+    public void removeCharge(Long bookingId, Long chargeId) {
+        requireChargeable(bookingId);
+        BookingCharge charge = chargeRepository.findById(chargeId)
+                .filter(c -> c.getBooking().getId().equals(bookingId))
+                .orElseThrow(() -> new BusinessException("Không tìm thấy phụ phí"));
+        chargeRepository.delete(charge);
+    }
+
+    // Chi them/xoa phu phi khi khach dang o (CHECKED_IN) va chua thanh toan - tranh lech so tien da thu
+    private Booking requireChargeable(Long bookingId) {
+        Booking booking = bookingService.findById(bookingId);
+        if (booking.getStatus() != BookingStatus.CHECKED_IN) {
+            throw new BusinessException("Chỉ thêm/xóa phụ phí cho đơn đang ở trạng thái Đã nhận phòng");
+        }
+        if (isPaid(bookingId)) {
+            throw new BusinessException("Đơn đã thanh toán, không thể thay đổi phụ phí");
+        }
+        return booking;
     }
 
     // Nhan vien kiem tra app ngan hang thay tien da vao -> ghi nhan da thanh toan chuyen khoan
@@ -120,7 +185,7 @@ public class PaymentService {
         }
         Booking checkedOut = bookingService.checkOut(bookingId);
         // Gui hoa don cho khach qua email (thay cho email bao "da check-out" dang chu thuong)
-        findByBookingId(bookingId).ifPresent(payment -> emailService.sendInvoice(checkedOut, payment));
+        findByBookingId(bookingId).ifPresent(payment -> emailService.sendInvoice(checkedOut, payment, findCharges(bookingId)));
         return checkedOut;
     }
 
@@ -134,7 +199,7 @@ public class PaymentService {
         if (booking.getGuestEmail() == null || booking.getGuestEmail().isBlank()) {
             throw new BusinessException("Đơn này không có email người nhận phòng");
         }
-        if (!emailService.sendInvoice(booking, payment)) {
+        if (!emailService.sendInvoice(booking, payment, findCharges(bookingId))) {
             throw new BusinessException("Gửi email thất bại. Kiểm tra cấu hình MAIL_USERNAME / MAIL_PASSWORD");
         }
         return booking.getGuestEmail();
@@ -152,6 +217,7 @@ public class PaymentService {
         data.put("nights", nights);
         data.put("roomAmount", booking.getRoom().getPrice().multiply(BigDecimal.valueOf(nights)));
         data.put("invoiceNo", payment.getInvoiceNo());
+        data.put("charges", findCharges(booking.getId()));
         return data;
     }
 
@@ -170,7 +236,7 @@ public class PaymentService {
     private Payment markPaid(Booking booking, PaymentMethod method) {
         Payment payment = paymentRepository.findByBookingId(booking.getId())
                 .orElseGet(() -> Payment.builder().booking(booking).build());
-        payment.setAmount(booking.getTotalAmount());
+        payment.setAmount(amountDue(booking));
         payment.setPaymentMethod(method);
         payment.setStatus(PaymentStatus.PAID);
         payment.setPaymentDate(LocalDateTime.now());

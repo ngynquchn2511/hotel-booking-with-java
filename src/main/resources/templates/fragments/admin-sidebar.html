@@ -10,6 +10,7 @@
     <a th:href="@{/admin/rooms}" class="list-group-item list-group-item-action">Phòng</a>
     <a th:href="@{/admin/combos}" class="list-group-item list-group-item-action">Combo dịch vụ</a>
     <a th:href="@{/admin/discount-codes}" class="list-group-item list-group-item-action">Mã giảm giá</a>
+    <a th:href="@{/admin/reviews}" class="list-group-item list-group-item-action">Đánh giá</a>
     <a th:href="@{/admin/staff-accounts}" class="list-group-item list-group-item-action" sec:authorize="hasRole('ADMIN')">Tài khoản nhân viên</a>
     <a th:href="@{/admin/audit-logs}" class="list-group-item list-group-item-action" sec:authorize="hasRole('ADMIN')">Nhật ký thao tác</a>
 </nav>

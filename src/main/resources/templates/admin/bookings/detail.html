@@ -53,6 +53,8 @@
                     <span th:class="'badge ' + (${payment.status.name() == 'PAID'} ? 'bg-success' : 'bg-secondary')"
                           th:text="${payment.status.vietnameseLabel}"></span>
                     — <span th:text="${payment.paymentMethod.vietnameseLabel}"></span>
+                    — đã thu <b th:text="${#numbers.formatDecimal(payment.amount, 1, 0)} + 'VND'"></b>
+                    <span class="text-muted small" th:if="${payment.amount.compareTo(booking.totalAmount) > 0}">(gồm phụ phí)</span>
                     <span class="text-muted" th:if="${payment.paymentDate != null}"
                           th:text="'(' + ${#temporals.format(payment.paymentDate, 'dd/MM/yyyy HH:mm')} + ')'"></span>
                 </p>

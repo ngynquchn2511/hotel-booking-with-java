@@ -107,6 +107,9 @@
             </div>
             <p class="mb-1" th:if="${review.comment != null}" th:text="'“' + ${review.comment} + '”'"></p>
             <div class="small text-muted" th:text="'Đã gửi lúc ' + ${#temporals.format(review.createdAt, 'HH:mm dd/MM/yyyy')}"></div>
+            <div class="small text-muted mt-1" th:if="${review.hidden}">
+                <i class="bi bi-eye-slash me-1"></i>Đánh giá này đang được ẩn khỏi trang công khai.
+            </div>
         </div>
 
         <form th:if="${review == null and canReview}" th:action="@{/customer/bookings/{id}/review(id=${booking.id})}" method="post">
