@@ -30,13 +30,13 @@ public class ChatbotService {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM");
     private static final int AVAILABILITY_LOOKAHEAD_DAYS = 7;
 
-    // Thong tin khach san dung de tu van - de hang so trong code (khong doc tu application.properties)
+    // Thong tin homestay dung de tu van - de hang so trong code (khong doc tu application.properties)
     // vi Spring doc file .properties bang ISO-8859-1 mac dinh, lam sai lech chu tieng Viet co dau.
-    private static final String HOTEL_NAME = "Khách sạn EAUT";
-    private static final String HOTEL_ADDRESS = "123 đường Phan Tây Nhạc, Từ Liêm, Hà Nội";
+    private static final String HOTEL_NAME = "Homestay Mây";
+    private static final String HOTEL_ADDRESS = "Dốc Tam Đảo, thị trấn Tam Đảo, Vĩnh Phúc";
     private static final String HOTEL_PHONE = "0338932368";
-    private static final String HOTEL_EMAIL = "khachsanEAUT@gmail.com";
-    private static final String HOTEL_FACILITIES = "Bãi đỗ xe, Hồ bơi, Phòng gym, Nhà hàng, Đưa đón sân bay, Giặt ủi";
+    private static final String HOTEL_EMAIL = "homestaymay.tamdao@gmail.com";
+    private static final String HOTEL_FACILITIES = "BBQ ngoài trời, Ban công ngắm mây, Đốt lửa trại, Bếp chung, Thuê xe máy, Wi-Fi và chỗ đỗ xe miễn phí";
     private static final String CHECK_IN_TIME = "12h trưa (12:00)";
     private static final String CHECK_OUT_TIME = "9h sáng hôm sau (09:00 hôm sau)";
 
@@ -72,11 +72,11 @@ public class ChatbotService {
         boolean askDeposit = containsAny(question, "coc");
         boolean askPayment = containsAny(question, "thanh toan", "tra tien", "hinh thuc thanh toan", "phuong thuc thanh toan");
         boolean askFacilities = containsAny(question, "dich vu", "tien ich", "co so vat chat", "tien nghi",
-                "ho boi", "be boi", "gym", "bai do xe", "doi xe", "nha hang", "dua don", "san bay", "giat ui",
-                "khach san co gi", "khach san phuc vu");
+                "bbq", "ban cong", "ngam may", "lua trai", "bep", "nau an", "thue xe", "xe may", "wifi", "wi fi", "bai do xe", "do xe",
+                "khach san co gi", "khach san phuc vu", "homestay co gi", "homestay phuc vu");
         boolean askCombo = containsAny(question, "combo", "do an", "an uong", "buffet");
         boolean askPromotion = containsAny(question, "uu dai", "khuyen mai", "giam gia", "ma giam gia", "voucher", "discount");
-        boolean askAddress = containsAny(question, "dia chi", "o dau", "vi tri khach san", "khach san o");
+        boolean askAddress = containsAny(question, "dia chi", "o dau", "vi tri khach san", "khach san o", "vi tri homestay", "homestay o");
         boolean askContact = containsAny(question, "so dien thoai", "hotline", "lien he", " sdt ", "dien thoai", "email");
         boolean askCheckTime = containsAny(question, "gio nhan", "gio tra", "nhan tra phong", "check in", "check out",
                 "may gio nhan", "may gio tra");
@@ -88,10 +88,10 @@ public class ChatbotService {
             sections.add(buildAvailabilityAnswer(matchedTypes));
         }
         if (askDeposit) {
-            sections.add("Hiện tại khách sạn KHÔNG yêu cầu đặt cọc trước khi đặt phòng online. Quý khách chỉ cần điền thông tin và xác nhận đơn, thanh toán khi nhận phòng hoặc trả phòng tại quầy lễ tân.");
+            sections.add("Hiện tại homestay KHÔNG yêu cầu đặt cọc trước khi đặt phòng online. Quý khách chỉ cần điền thông tin và xác nhận đơn, thanh toán khi nhận phòng hoặc trả phòng tại quầy lễ tân.");
         }
         if (askPayment) {
-            sections.add("Khách sạn hỗ trợ các hình thức thanh toán: Tiền mặt, Chuyển khoản ngân hàng, và Thanh toán online.");
+            sections.add("Homestay hỗ trợ các hình thức thanh toán: Tiền mặt, Chuyển khoản ngân hàng, và Thanh toán online.");
         }
         if (askFacilities) {
             sections.add(buildFacilitiesAnswer(matchedTypes));
@@ -122,7 +122,7 @@ public class ChatbotService {
             } else {
                 sections.add("Mình có thể giúp bạn tra cứu: giá phòng, phòng còn trống ngày nào, chính sách đặt cọc, "
                         + "hình thức thanh toán, dịch vụ/tiện ích, combo ăn uống, địa chỉ, số điện thoại liên hệ và giờ nhận/trả phòng. "
-                        + "Ví dụ bạn có thể hỏi: \"Phòng VIP giá bao nhiêu?\", \"Khách sạn ở đâu?\" hoặc \"Số điện thoại liên hệ là gì?\"");
+                        + "Ví dụ bạn có thể hỏi: \"Phòng VIP giá bao nhiêu?\", \"Homestay ở đâu?\" hoặc \"Số điện thoại liên hệ là gì?\"");
             }
         }
 
@@ -151,7 +151,7 @@ public class ChatbotService {
     private String buildPriceAnswer(List<RoomType> matchedTypes) {
         List<RoomType> types = matchedTypes.isEmpty() ? roomTypeRepository.findAll() : matchedTypes;
         if (types.isEmpty()) {
-            return "Hiện khách sạn chưa cập nhật loại phòng nào.";
+            return "Hiện homestay chưa cập nhật loại phòng nào.";
         }
         StringBuilder sb = new StringBuilder("Giá phòng hiện tại:");
         for (RoomType rt : types) {
@@ -212,7 +212,7 @@ public class ChatbotService {
     private String buildComboAnswer() {
         List<Combo> combos = comboRepository.findByActiveTrue();
         if (combos.isEmpty()) {
-            return "Hiện khách sạn chưa có combo dịch vụ ăn uống nào đang áp dụng.";
+            return "Hiện homestay chưa có combo dịch vụ ăn uống nào đang áp dụng.";
         }
         StringBuilder sb = new StringBuilder("Các combo dịch vụ hiện có:");
         for (Combo c : combos) {
@@ -235,7 +235,7 @@ public class ChatbotService {
         if (relevant.isEmpty()) {
             return askingForNew
                     ? "Hiện tại chưa có mã ưu đãi riêng cho khách hàng mới, bạn theo dõi trang chủ để cập nhật khuyến mãi mới nhất nhé."
-                    : "Hiện khách sạn chưa có mã giảm giá nào đang áp dụng.";
+                    : "Hiện homestay chưa có mã giảm giá nào đang áp dụng.";
         }
 
         StringBuilder sb = new StringBuilder(askingForNew ? "Ưu đãi dành cho khách hàng mới:" : "Các mã ưu đãi đang áp dụng:");

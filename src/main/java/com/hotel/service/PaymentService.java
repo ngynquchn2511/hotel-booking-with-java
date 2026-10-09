@@ -38,7 +38,7 @@ public class PaymentService {
     @Value("${app.payment.account-no:0000000000}")
     private String accountNo;
 
-    @Value("${app.payment.account-name:KHACH SAN HOTEL BOOKING}")
+    @Value("${app.payment.account-name:HOMESTAY MAY}")
     private String accountName;
 
     public PaymentService(PaymentRepository paymentRepository, BookingService bookingService, EmailService emailService,

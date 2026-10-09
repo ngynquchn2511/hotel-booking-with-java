@@ -383,7 +383,7 @@ class CustomerFlowParamIT extends ItFixtures {
 
     @TcSteps("POST /api/chatbot/ask với JSON {\"message\": câu hỏi} (có CSRF, không đăng nhập)")
     @ParameterizedTest(name = "API chatbot trả lời ¦ message=\"{0}\" ¦ HTTP 200, JSON reply chứa \"{1}\"")
-    @CsvSource(delimiter = '|', value = {"Khách sạn ở đâu?|Phan Tây Nhạc", "Số điện thoại liên hệ|0338932368", "Có cần đặt cọc không|đặt cọc",
+    @CsvSource(delimiter = '|', value = {"Homestay ở đâu?|Dốc Tam Đảo", "Số điện thoại liên hệ|0338932368", "Có cần đặt cọc không|đặt cọc",
             "Thanh toán thế nào|Tiền mặt", "Mấy giờ nhận phòng|Giờ nhận phòng", "xin chào|trợ lý ảo", "abcxyz|Mình có thể giúp bạn"})
     void chatbotApi(String message, String expected) throws Exception {
         mockMvc.perform(post("/api/chatbot/ask").with(csrf()).contentType(MediaType.APPLICATION_JSON)

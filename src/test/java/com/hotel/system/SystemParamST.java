@@ -19,7 +19,7 @@ class SystemParamST extends StBase {
     @TcSteps("Khởi động ứng dụng thật, trình duyệt (HttpClient) mở trang chưa đăng nhập, đọc HTML trả về")
     @ParameterizedTest(name = "Trang {0} hiển thị \"{1}\" ¦ GET {0} (chưa đăng nhập) ¦ HTTP 200, HTML chứa \"{1}\"")
     @CsvSource(delimiter = '|', value = {
-            "/|Hệ thống quản lý đặt phòng khách sạn", "/|Xem danh sách phòng", "/|Chat với tôi", "/|Đăng nhập", "/|Đăng ký",
+            "/|Hệ thống quản lý đặt phòng Homestay Mây", "/|Xem danh sách phòng", "/|Chat với tôi", "/|Đăng nhập", "/|Đăng ký",
             "/rooms|Danh sách phòng", "/rooms|Tìm theo giá", "/rooms|Loại phòng", "/rooms|Từ 1.300.000 VND",
             "/login|Chào mừng trở lại", "/login|Đăng ký ngay", "/login|name=\"username\"", "/login|name=\"password\"",
             "/register|name=\"fullName\"", "/register|name=\"phoneNumber\"", "/register|name=\"confirmPassword\"",
@@ -226,9 +226,9 @@ class SystemParamST extends StBase {
 
     @TcSteps("Mở trang chủ lấy CSRF token của widget chatbot, gửi POST /api/chatbot/ask (JSON) như trình duyệt")
     @ParameterizedTest(name = "Chatbot trên server thật trả lời ¦ câu hỏi: \"{0}\" ¦ HTTP 200, reply chứa \"{1}\"")
-    @CsvSource(delimiter = '|', value = {"Khách sạn ở đâu?|Phan Tây Nhạc", "Số điện thoại liên hệ|0338932368", "email khách sạn|khachsanEAUT@gmail.com",
+    @CsvSource(delimiter = '|', value = {"Homestay ở đâu?|Dốc Tam Đảo", "Số điện thoại liên hệ|0338932368", "email homestay|homestaymay.tamdao@gmail.com",
             "Có cần đặt cọc không|không yêu cầu đặt cọc", "Thanh toán thế nào|Chuyển khoản", "Mấy giờ trả phòng|Giờ trả phòng",
-            "Có hồ bơi không|Hồ bơi", "xin chào|trợ lý ảo", "Giá phòng bao nhiêu|Giá phòng", "câu hỏi linh tinh|Mình có thể giúp bạn"})
+            "Có ban công ngắm mây không|Ban công ngắm mây", "xin chào|trợ lý ảo", "Giá phòng bao nhiêu|Giá phòng", "câu hỏi linh tinh|Mình có thể giúp bạn"})
     void chatbot(String q, String expected) {
         Browser b = new Browser();
         String token = b.chatbotToken("/");

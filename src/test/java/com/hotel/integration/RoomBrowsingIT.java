@@ -55,7 +55,7 @@ class RoomBrowsingIT {
                 .andExpect(status().isOk())
                 .andExpect(view().name("about"))
                 .andExpect(model().attributeExists("roomTypes", "roomCount", "combos"))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Khách sạn EAUT")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Homestay Mây")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Phong Doi IT")));
     }
 

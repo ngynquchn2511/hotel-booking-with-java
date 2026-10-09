@@ -58,9 +58,9 @@ public class EmailService {
         }
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom("Hotel Booking <" + senderEmail + ">");
+            message.setFrom("Homestay Mây <" + senderEmail + ">");
             message.setTo(booking.getGuestEmail());
-            message.setSubject("Xác nhận đặt phòng #" + booking.getId() + " - Hotel Booking");
+            message.setSubject("Xác nhận đặt phòng #" + booking.getId() + " - Homestay Mây");
             message.setText(buildBody(booking));
             message.setSubject(buildSubject(booking));
             mailSender.send(message);
@@ -79,16 +79,16 @@ public class EmailService {
         }
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom("Hotel Booking <" + senderEmail + ">");
+            message.setFrom("Homestay Mây <" + senderEmail + ">");
             message.setTo(user.getEmail());
-            message.setSubject("Hotel Booking - Đặt lại mật khẩu");
+            message.setSubject("Homestay Mây - Đặt lại mật khẩu");
             message.setText("Xin chào " + user.getFullName() + ",\n\n"
                     + "Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.\n"
                     + "Nhấn vào liên kết dưới đây để tạo mật khẩu mới (có hiệu lực trong "
                     + UserService.RESET_TOKEN_VALID_MINUTES + " phút):\n\n"
                     + resetLink + "\n\n"
                     + "Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này. Mật khẩu hiện tại vẫn được giữ nguyên.\n\n"
-                    + "Trân trọng,\nHotel Booking");
+                    + "Trân trọng,\nHomestay Mây");
             mailSender.send(message);
             log.info("Da gui email dat lai mat khau toi {}", user.getEmail());
         } catch (Exception ex) {
@@ -111,9 +111,9 @@ public class EmailService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
-            helper.setFrom(senderEmail, "Hotel Booking");
+            helper.setFrom(senderEmail, "Homestay Mây");
             helper.setTo(booking.getGuestEmail());
-            helper.setSubject("Hotel Booking - Hóa đơn " + payment.getInvoiceNo() + " (đơn #" + booking.getId() + ")");
+            helper.setSubject("Homestay Mây - Hóa đơn " + payment.getInvoiceNo() + " (đơn #" + booking.getId() + ")");
             helper.setText(buildInvoiceHtml(booking, payment, charges), true);
             mailSender.send(message);
             log.info("Da gui hoa don {} toi {}", payment.getInvoiceNo(), booking.getGuestEmail());
@@ -151,13 +151,13 @@ public class EmailService {
                 <div style="margin:0;padding:24px;background:#f3faff;font-family:Arial,Helvetica,sans-serif;color:#14365a">
                   <div style="max-width:620px;margin:0 auto;background:#ffffff;border:1.5px solid #14365a;border-radius:14px">
                     <div style="padding:22px 26px;background:#9fd8f5;border-bottom:1.5px solid #14365a;border-radius:12px 12px 0 0">
-                      <div style="font-size:12px;letter-spacing:2px;font-weight:bold">HOTEL BOOKING</div>
+                      <div style="font-size:12px;letter-spacing:2px;font-weight:bold">HOMESTAY MÂY</div>
                       <div style="font-size:24px;font-weight:bold;margin-top:4px">Hóa đơn thanh toán</div>
                       <div style="margin-top:6px">Số: <b>%s</b> &middot; Ngày: %s</div>
                     </div>
                     <div style="padding:22px 26px">
                       <p style="margin:0 0 14px">Xin chào <b>%s</b>,</p>
-                      <p style="margin:0 0 18px">Cảm ơn bạn đã lưu trú tại Hotel Booking. Dưới đây là hóa đơn cho đơn đặt phòng
+                      <p style="margin:0 0 18px">Cảm ơn bạn đã lưu trú tại Homestay Mây. Dưới đây là hóa đơn cho đơn đặt phòng
                         <b>#%d</b> (nhận phòng %s, trả phòng %s).</p>
                       <table style="width:100%%;border-collapse:collapse;font-size:14px">
                         <tr style="background:#e3f4fd">
@@ -172,7 +172,7 @@ public class EmailService {
                         </tr>
                       </table>
                       <p style="margin:18px 0 0">Phương thức: <b>%s</b> &middot; Trạng thái: <b style="color:#1d8a4e">%s</b></p>
-                      <p style="margin:22px 0 0">Hẹn gặp lại bạn trong kỳ nghỉ tới!<br>Trân trọng,<br><b>Hotel Booking</b></p>
+                      <p style="margin:22px 0 0">Hẹn gặp lại bạn trong kỳ nghỉ tới!<br>Trân trọng,<br><b>Homestay Mây</b></p>
                     </div>
                   </div>
                 </div>
@@ -204,18 +204,18 @@ public class EmailService {
 
     private String buildSubject(Booking booking) {
         return switch (booking.getStatus()) {
-            case PENDING -> "Hotel Booking - Da nhan yeu cau dat phong #" + booking.getId();
-            case CONFIRMED -> "Hotel Booking - Don dat phong #" + booking.getId() + " da duoc xac nhan";
-            case CANCELLED -> "Hotel Booking - Don dat phong #" + booking.getId() + " da bi huy";
-            case CHECKED_IN -> "Hotel Booking - Ban da check-in booking #" + booking.getId();
-            case CHECKED_OUT -> "Hotel Booking - Ban da check-out booking #" + booking.getId();
+            case PENDING -> "Homestay Mây - Da nhan yeu cau dat phong #" + booking.getId();
+            case CONFIRMED -> "Homestay Mây - Don dat phong #" + booking.getId() + " da duoc xac nhan";
+            case CANCELLED -> "Homestay Mây - Don dat phong #" + booking.getId() + " da bi huy";
+            case CHECKED_IN -> "Homestay Mây - Ban da check-in booking #" + booking.getId();
+            case CHECKED_OUT -> "Homestay Mây - Ban da check-out booking #" + booking.getId();
         };
     }
 
     private String buildBody(Booking booking) {
         StringBuilder sb = new StringBuilder();
         sb.append("Xin chào ").append(booking.getGuestName()).append(",\n\n");
-        sb.append("Cảm ơn bạn đã đặt phòng tại Hotel Booking. Thông tin đơn đặt phòng:\n\n");
+        sb.append("Cảm ơn bạn đã đặt phòng tại Homestay Mây. Thông tin đơn đặt phòng:\n\n");
         sb.append("Mã đơn: #").append(booking.getId()).append("\n");
         sb.append("Phòng: ").append(booking.getRoom().getRoomNumber())
                 .append(" - ").append(booking.getRoom().getRoomType().getName()).append("\n");
@@ -228,7 +228,7 @@ public class EmailService {
         }
         sb.append("Tổng tiền: ").append(booking.getTotalAmount()).append(" VND\n\n");
         sb.append("Trạng thái đơn: ").append(booking.getStatus().getVietnameseLabel()).append("\n\n");
-        sb.append("Trân trọng,\nHotel Booking");
+        sb.append("Trân trọng,\nHomestay Mây");
         return sb.toString();
     }
 }

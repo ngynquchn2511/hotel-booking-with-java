@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Hotel Booking - Trang chu</title>
+    <title>Homestay Mây - Trang chủ</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600;1,9..144,700&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -30,6 +30,16 @@
         .quick .ic { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 10px; font-size: 1.3rem; margin: .4rem 0 .9rem;
             background: var(--baby); color: var(--ink); border: var(--line); }
         .quick .t { font-family: var(--display); font-weight: 700; font-size: 1.3rem; }
+        /* Day anh polaroid Tam Dao */
+        .postcards { padding: 3.5rem 0 1rem; }
+        .polaroid { display: block; padding: 10px 10px 0; background: var(--paper); border: var(--line); border-radius: 6px;
+            box-shadow: var(--pop); transition: transform .2s, box-shadow .2s; color: var(--ink) !important; text-decoration: none; }
+        .postcards .col-md-4:nth-child(1) .polaroid { transform: rotate(-2deg); }
+        .postcards .col-md-4:nth-child(2) .polaroid { transform: rotate(1deg) translateY(14px); }
+        .postcards .col-md-4:nth-child(3) .polaroid { transform: rotate(2.2deg); }
+        .polaroid:hover { transform: rotate(0) translate(-3px, -3px) !important; box-shadow: var(--pop-hover); }
+        .polaroid img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; border-radius: 3px; border: var(--line); }
+        .polaroid .cap { font-family: var(--display); font-style: italic; font-size: 1.05rem; text-align: center; padding: .7rem 0 .9rem; }
     </style>
 </head>
 <body class="eaut" th:style="'--page-bg: url(' + @{/page-images/trangchu.jpg} + ')'">
@@ -43,11 +53,11 @@
                 <span><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></span>
                 <span>HỆ THỐNG ĐẶT PHÒNG TRỰC TUYẾN</span>
             </div>
-            <h1 class="home-title mb-3"><span class="gradient-text">Hệ thống quản lý đặt phòng khách sạn</span></h1>
+            <h1 class="home-title mb-3"><span class="gradient-text"> Homestay Mây</span></h1>
             <p class="fs-5 text-muted mb-5">Tìm phòng, xem thông tin và đặt phòng trực tuyến nhanh chóng</p>
             <div class="d-flex flex-wrap gap-3 justify-content-center mb-5">
                 <a th:href="@{/rooms}" class="btn btn-primary btn-lg px-4 py-3"><i class="bi bi-calendar2-heart me-2"></i>Xem danh sách phòng</a>
-                <a th:href="@{/about}" class="btn btn-soft btn-lg"><i class="bi bi-play-circle me-2"></i>Giới thiệu khách sạn</a>
+                <a th:href="@{/about}" class="btn btn-soft btn-lg"><i class="bi bi-play-circle me-2"></i>Giới thiệu homestay</a>
             </div>
 
             <div class="row g-3 text-start">
@@ -75,6 +85,25 @@
                         <div class="small text-muted">Xem lịch sử, sửa giờ hoặc hủy đơn dễ dàng.</div>
                     </a>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Anh Tam Dao (Wikimedia Commons, xem nguon o trang Gioi thieu) -->
+    <section class="postcards">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold mb-1">Tam Đảo — thị trấn trong mây</h2>
+            <p class="text-muted mb-0">Dốc Tam Đảo, Tam Đảo, Vĩnh Phúc · mát lạnh quanh năm</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <a th:href="@{/about#kham-pha}" class="polaroid"><img src="/page-images/tamdao-may-phu.jpg" alt="Mây phủ thị trấn Tam Đảo" loading="lazy"><div class="cap">Mây phủ sườn núi</div></a>
+            </div>
+            <div class="col-md-4">
+                <a th:href="@{/about#kham-pha}" class="polaroid"><img src="/page-images/tamdao-lau-dai.jpg" alt="Lâu đài Tam Đảo" loading="lazy"><div class="cap">Lâu đài Tam Đảo</div></a>
+            </div>
+            <div class="col-md-4">
+                <a th:href="@{/about#kham-pha}" class="polaroid"><img src="/page-images/tamdao-thi-tran.jpg" alt="Thị trấn Tam Đảo" loading="lazy"><div class="cap">Thị trấn bên sườn núi</div></a>
             </div>
         </div>
     </section>

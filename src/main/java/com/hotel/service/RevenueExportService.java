@@ -65,14 +65,14 @@ public class RevenueExportService {
         int r = 0;
 
         Cell title = sheet.createRow(r++).createCell(0);
-        title.setCellValue("BÁO CÁO DOANH THU KHÁCH SẠN");
+        title.setCellValue("BÁO CÁO DOANH THU HOMESTAY MÂY");
         title.setCellStyle(styles.title);
         sheet.createRow(r++).createCell(0)
                 .setCellValue("Từ ngày " + fromDate.format(DATE) + " đến ngày " + toDate.format(DATE));
         r++;
 
         BookingService.HotelKpi kpi = bookingService.getHotelKpi(fromDate, toDate);
-        r = sectionHeader(sheet, styles, r, "Chỉ số khách sạn (theo ngày khách ở)");
+        r = sectionHeader(sheet, styles, r, "Chỉ số homestay (theo ngày khách ở)");
         r = labelValue(sheet, r, "Công suất phòng (%)", kpi.occupancyRate(), styles.percent);
         r = labelValue(sheet, r, "Số đêm-phòng đã bán", kpi.soldRoomNights(), styles.integer);
         r = labelValue(sheet, r, "Số đêm-phòng có thể bán", kpi.availableRoomNights(), styles.integer);
