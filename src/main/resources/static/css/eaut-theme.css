@@ -2,7 +2,8 @@
    Giao dien khach hang - phong cach "do van phong pham khach san":
    giay trang cham bi, muc xanh navy, xanh baby lam diem nhan, bong do lech kieu nhan dan,
    the chia khoa / tem hanh ly / ve / anh polaroid.
-   Chi ap dung khi <body class="eaut"> - khong anh huong khu quan tri.
+   Chi ap dung khi <body class="eaut">. Khu quan tri dung chung theme (<body class="eaut eaut-admin">)
+   va co them phan rieng o cuoi file (sidebar, nut/nhan nhieu mau, bang du lieu).
    Trang Gioi thieu tu co style rieng nen chi dung class "eaut-chrome" (chi doi header/footer).
    ===================================================================== */
 body.eaut, body.eaut-chrome {
@@ -249,3 +250,106 @@ body.eaut main > *:nth-child(4) { animation-delay: .15s; }
 }
 body.eaut .toggle-pw { border: var(--line) !important; border-left: 0 !important; background: var(--paper) !important; color: var(--ink) !important; }
 body.eaut .strength { background: var(--baby-soft) !important; border: 1px solid var(--ink); }
+
+/* =====================================================================
+   Khu quan tri (body.eaut-admin) - cung phong cach voi giao dien khach hang
+   ===================================================================== */
+
+/* Trang ngan: day footer xuong day man hinh (trang admin dung ca container-fluid) */
+body.eaut-admin main { flex-grow: 1; }
+
+/* Tieu de trang: chu Fraunces + to but da quang */
+body.eaut-admin main h3.fw-bold { font-size: 1.9rem; }
+body.eaut-admin main h3.fw-bold::after {
+    content: ''; display: block; width: 110px; height: 12px; margin-top: .25rem;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='12' viewBox='0 0 110 12'%3E%3Cpath d='M2 7 C 16 2, 24 11, 38 6 S 62 2, 74 7 S 98 11, 108 4' fill='none' stroke='%235bb8e8' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat;
+}
+body.eaut-admin main h3.fw-bold.m-0::after { display: none; }
+body.eaut-admin main h4, body.eaut-admin main h5 { font-family: var(--display); }
+
+/* Sidebar: so tay muc luc */
+body.eaut .admin-sidebar {
+    background: var(--paper); border: var(--line); border-radius: 14px; box-shadow: var(--pop);
+    padding: .6rem; position: sticky; top: 88px;
+}
+body.eaut .admin-sidebar-title {
+    font-size: .7rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft);
+    padding: .7rem .7rem .3rem; border-top: 1.5px dashed #b9dcf0; margin-top: .35rem;
+}
+body.eaut .admin-sidebar-title:first-child { border-top: 0; margin-top: 0; padding-top: .3rem; }
+body.eaut .admin-sidebar .list-group-item {
+    border: 0; border-radius: 10px !important; margin: 1px 0; padding: .5rem .7rem;
+    background: transparent; color: var(--ink); font-weight: 600; font-size: .93rem;
+    transition: background .15s, transform .15s;
+}
+body.eaut .admin-sidebar .list-group-item .bi { margin-right: .6rem; color: var(--baby-deep); }
+body.eaut .admin-sidebar .list-group-item:hover { background: var(--baby-soft); transform: translateX(3px); }
+body.eaut .admin-sidebar .list-group-item.active {
+    background: var(--baby); color: var(--ink); border: var(--line); box-shadow: 3px 3px 0 var(--ink);
+}
+body.eaut .admin-sidebar .list-group-item.active .bi { color: var(--ink); }
+body.eaut .admin-sidebar .new-dot { border: 1.5px solid var(--ink); }
+
+/* O nen xam ben trong khung -> giay ghi chu xanh baby vien net dut */
+body.eaut-admin main .bg-light:not(.btn) {
+    background: var(--baby-soft) !important; border: 1.5px dashed var(--baby-deep) !important; border-radius: 10px;
+}
+body.eaut-admin .bg-success-subtle { background: #eafbf1 !important; }
+
+/* Bang du lieu dat truc tiep tren nen (table.bg-white) cung la nhan dan vien muc */
+body.eaut table.bg-white { border-collapse: separate; border-spacing: 0; overflow: hidden; }
+body.eaut table.bg-white > :not(caption) > * > * { padding: .65rem .75rem; }
+body.eaut .table-striped > tbody > tr:nth-of-type(odd) > * { --bs-table-bg-type: var(--baby-soft) !important; }
+body.eaut .table-light { --bs-table-bg: var(--baby-soft); --bs-table-color: var(--ink); }
+body.eaut .table-responsive { border-radius: 12px; }
+
+/* Nut nhieu mau: cung kieu "phim bam" vien muc + bong do lech */
+body.eaut :is(.btn-success, .btn-warning, .btn-danger, .btn-info, .btn-dark, .btn-light) {
+    color: var(--ink); border: var(--line); box-shadow: 3px 3px 0 var(--ink);
+}
+body.eaut .btn-success { background: #bdeccf; }
+body.eaut .btn-warning { background: var(--sun); }
+body.eaut .btn-danger { background: #ffd4dc; }
+body.eaut .btn-info { background: var(--baby); }
+body.eaut .btn-light { background: var(--paper); }
+body.eaut .btn-dark { background: var(--ink); color: var(--paper); }
+body.eaut :is(.btn-success, .btn-warning, .btn-danger, .btn-info, .btn-light):hover {
+    color: var(--ink); border-color: var(--ink); filter: brightness(.96); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink);
+}
+body.eaut .btn-dark:hover { background: #0d2742; color: var(--paper); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--baby-deep); }
+body.eaut .btn-outline-warning { color: #8a6100; border-color: #c99400; box-shadow: 3px 3px 0 #ffeeb3; background: var(--paper); }
+body.eaut .btn-outline-warning:hover { background: #fff8de; color: #6b4b00; border-color: #c99400; }
+body.eaut .btn-outline-success { background: var(--paper); color: #1d6b40; }
+body.eaut .btn-outline-success:hover { background: #eafbf1; color: #1d6b40; }
+body.eaut .btn-outline-danger { background: var(--paper); color: #a3233a; }
+body.eaut .btn-outline-danger:hover { background: #fff0f2; color: #a3233a; }
+body.eaut .btn-sm { border-radius: 8px; box-shadow: 2px 2px 0 var(--baby); padding: .22rem .6rem; }
+body.eaut .btn-sm:is(.btn-primary, .btn-success, .btn-warning, .btn-danger, .btn-info, .btn-dark) { box-shadow: 2px 2px 0 var(--ink); }
+body.eaut .btn:disabled, body.eaut .btn.disabled { box-shadow: none; opacity: .5; }
+
+/* Nhan trang thai */
+body.eaut .badge.bg-primary { background: var(--baby-deep) !important; }
+body.eaut .badge.bg-dark { background: var(--ink) !important; color: var(--paper) !important; }
+body.eaut .badge.bg-light { background: var(--paper) !important; }
+
+/* Thanh cong suat phong */
+body.eaut .progress { background: var(--baby-soft); border: 1.5px solid var(--ink); border-radius: 6px; height: 10px !important; }
+body.eaut .progress-bar { background: var(--baby-deep) !important; }
+
+/* Lua chon phuong thuc thanh toan (check-out) */
+body.eaut .method-option { border: var(--line) !important; border-radius: 12px !important; background: var(--paper); }
+body.eaut .method-option:has(input:checked) { background: var(--baby-soft); box-shadow: 3px 3px 0 var(--ink); }
+
+/* The so lieu dashboard: so in dam font Fraunces */
+body.eaut-admin main .fs-3.fw-bold, body.eaut-admin main .fs-4.fw-bold { font-family: var(--display); }
+
+/* Trang dang nhap quan tri */
+body.eaut.eaut-admin-login { display: block; }
+body.eaut .login-shell { min-height: 100vh; display: grid; place-items: center; padding: 2rem 1rem; }
+body.eaut .login-card { width: min(100%, 450px); box-shadow: 8px 8px 0 var(--baby) !important; }
+body.eaut .login-card .badge-icon {
+    width: 58px; height: 58px; display: grid; place-items: center; margin: 0 auto 1rem; font-size: 25px;
+    background: var(--sun); color: var(--ink); border: var(--line); border-radius: 14px; box-shadow: 3px 3px 0 var(--ink);
+    transform: rotate(-4deg);
+}
+body.eaut .login-card .eyebrow-text { color: var(--ink-soft); letter-spacing: .14em; }

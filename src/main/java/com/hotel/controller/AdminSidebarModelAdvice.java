@@ -1,6 +1,7 @@
 package com.hotel.controller;
 
 import com.hotel.service.BookingService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
@@ -30,5 +31,11 @@ public class AdminSidebarModelAdvice {
     @ModelAttribute("newBookingCount")
     public long newBookingCount() {
         return bookingService.countNewBookings();
+    }
+
+    // Duong dan hien tai (bo context path) de sidebar to dam muc dang mo
+    @ModelAttribute("currentPath")
+    public String currentPath(HttpServletRequest request) {
+        return request.getRequestURI().substring(request.getContextPath().length());
     }
 }
