@@ -28,8 +28,27 @@
         <p class="mb-1">Ngày trả phòng: <span th:text="${checkOut}"></span></p>
         <p class="mb-1" th:if="${guests != null}">Số khách: <span th:text="${guests}"></span></p>
         <p class="mb-1">Số đêm: <span th:text="${nights}"></span></p>
-        <p class="mb-1">Tiền phòng: <span th:text="${#numbers.formatDecimal(roomAmount, 1, 0)} + 'VND'"></span></p>
+
+        <!-- Gia tung dem: ngay thuong / cuoi tuan / ngay le -->
+        <table class="table table-sm mt-2 mb-2" th:if="${!#lists.isEmpty(nightlyPrices)}">
+            <tbody>
+            <tr th:each="n : ${nightlyPrices}">
+                <td class="text-muted small" th:text="'Đêm ' + ${#temporals.format(n.night, 'dd/MM')} + ' (' + ${n.dayName()} + ')'"></td>
+                <td class="small" th:text="${n.label}"></td>
+                <td class="text-end small" th:text="${#numbers.formatDecimal(n.price, 1, 0)} + ' VND'"></td>
+            </tr>
+            </tbody>
+        </table>
+        <p class="mb-1 fw-bold">Tiền phòng: <span th:text="${#numbers.formatDecimal(roomAmount, 1, 0)} + ' VND'"></span></p>
         <p class="mb-1" th:if="${combo != null}">Combo đã chọn: <span th:text="${combo.name}"></span> (+<span th:text="${#numbers.formatDecimal(combo.price, 1, 0)}"></span> VND)</p>
+
+        <div class="alert alert-warning small mt-3 mb-0" th:if="${estimatedDeposit != null and estimatedDeposit.signum() > 0}">
+            <i class="bi bi-shield-check me-1"></i>
+            <b>Đặt cọc <span th:text="${depositPercent}">30</span>% để giữ phòng</b>
+            (khoảng <span th:text="${#numbers.formatDecimal(estimatedDeposit, 1, 0)}"></span> VND, chưa trừ mã giảm giá).
+            Sau khi đặt, bạn sẽ nhận mã QR chuyển khoản và có <span th:text="${depositDeadlineHours}">24</span> giờ để chuyển cọc.
+            Phần còn lại thanh toán khi trả phòng.
+        </div>
     </div>
 
     <div class="bg-white p-4 rounded shadow-sm">

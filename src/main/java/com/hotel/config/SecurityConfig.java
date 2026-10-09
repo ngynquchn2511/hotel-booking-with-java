@@ -92,6 +92,8 @@ public class SecurityConfig {
                         .requestMatchers("/admin/discount-codes/new", "/admin/discount-codes/*/edit").hasRole("ADMIN")
                         // Doi loai khach hang (anh huong ma giam gia) va khoa tai khoan khach - chi ADMIN
                         .requestMatchers("/admin/customers/*/update-type", "/admin/customers/*/toggle-lock").hasRole("ADMIN")
+                        // Gia cuoi tuan / ngay le va chinh sach dat coc - chi ADMIN duoc doi gia
+                        .requestMatchers("/admin/pricing", "/admin/pricing/**").hasRole("ADMIN")
                         // Cac chuc nang con lai (don dat phong, check-in/out, trang thai phong, doanh thu...) - ca STAFF va ADMIN
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers("/staff/**").hasAnyRole("STAFF", "ADMIN")

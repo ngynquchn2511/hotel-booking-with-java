@@ -30,8 +30,8 @@ public class RevenueExportService {
 
     private static final String[] BOOKING_HEADERS = {"Mã đơn", "Ngày tạo", "Khách hàng", "Số điện thoại", "Phòng",
             "Loại phòng", "Nhận phòng", "Trả phòng", "Số đêm", "Combo", "Giảm giá", "Tiền đơn", "Phụ phí",
-            "Tổng cộng", "Trạng thái đơn", "Thanh toán", "Phương thức", "Ngày thanh toán"};
-    private static final int[] BOOKING_WIDTHS = {9, 17, 24, 14, 8, 18, 12, 12, 8, 20, 13, 14, 13, 14, 16, 17, 22, 17};
+            "Tổng cộng", "Đã cọc", "Trạng thái đơn", "Thanh toán", "Phương thức", "Ngày thanh toán"};
+    private static final int[] BOOKING_WIDTHS = {9, 17, 24, 14, 8, 18, 12, 12, 8, 20, 13, 14, 13, 14, 13, 16, 17, 22, 17};
 
     private final BookingService bookingService;
     private final PaymentService paymentService;
@@ -146,6 +146,7 @@ public class RevenueExportService {
             numberCell(row, c++, b.getTotalAmount(), styles.money);
             numberCell(row, c++, charge, styles.money);
             numberCell(row, c++, b.getTotalAmount().add(charge), styles.moneyBold);
+            numberCell(row, c++, b.getDepositPaidAmount(), styles.money);
             row.createCell(c++).setCellValue(b.getStatus().getVietnameseLabel());
             row.createCell(c++).setCellValue(payment != null ? payment.getStatus().getVietnameseLabel() : "Chưa thanh toán");
             row.createCell(c++).setCellValue(payment != null && payment.getPaymentMethod() != null

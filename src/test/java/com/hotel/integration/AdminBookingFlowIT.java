@@ -81,6 +81,13 @@ class AdminBookingFlowIT {
     @Test
     void checkIn_confirmedBooking_setsRoomOccupiedInDb() throws Exception {
         Booking b = seedBooking(BookingStatus.CONFIRMED);
+        // Khai bao luu tru truoc khi check-in
+        mockMvc.perform(post("/admin/bookings/{id}/guests", b.getId()).with(csrf())
+                        .with(user(new CustomUserDetails(staff)))
+                        .param("fullName", "Khach").param("dateOfBirth", "1990-01-15").param("gender", "FEMALE")
+                        .param("idType", "CCCD").param("idNumber", "001190000001").param("nationality", "Việt Nam"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(flash().attributeExists("successMessage"));
 
         mockMvc.perform(post("/admin/bookings/{id}/check-in", b.getId()).with(csrf())
                         .with(user(new CustomUserDetails(staff))))

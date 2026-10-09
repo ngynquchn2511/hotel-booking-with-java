@@ -15,6 +15,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByStatusOrderByCreatedAtDesc(BookingStatus status);
 
+    // Don da nhan coc trong khoang thoi gian - cong vao thong ke tien thu (coc luon nhan bang chuyen khoan)
+    List<Booking> findByDepositPaidAtBetween(java.time.LocalDateTime from, java.time.LocalDateTime to);
+
     List<Booking> findAllByOrderByCreatedAtDesc();
 
     long countByNewBookingTrue();

@@ -5,17 +5,20 @@ import java.util.Map;
 // Ten tieng Viet cua doi tuong / truong du lieu de hien thi trong nhat ky thao tac
 public final class AuditLabels {
 
-    private static final Map<String, String> ENTITY_LABELS = Map.of(
-            "Booking", "Đơn đặt phòng",
-            "Room", "Phòng",
-            "RoomType", "Loại phòng",
-            "RoomImage", "Ảnh phòng",
-            "Combo", "Combo dịch vụ",
-            "DiscountCode", "Mã giảm giá",
-            "Payment", "Thanh toán",
-            "Review", "Đánh giá",
-            "BookingCharge", "Phụ phí",
-            "User", "Tài khoản"
+    private static final Map<String, String> ENTITY_LABELS = Map.ofEntries(
+            Map.entry("Booking", "Đơn đặt phòng"),
+            Map.entry("Room", "Phòng"),
+            Map.entry("RoomType", "Loại phòng"),
+            Map.entry("RoomImage", "Ảnh phòng"),
+            Map.entry("Combo", "Combo dịch vụ"),
+            Map.entry("DiscountCode", "Mã giảm giá"),
+            Map.entry("Payment", "Thanh toán"),
+            Map.entry("Review", "Đánh giá"),
+            Map.entry("BookingCharge", "Phụ phí"),
+            Map.entry("User", "Tài khoản"),
+            Map.entry("PricingSettings", "Cài đặt giá & đặt cọc"),
+            Map.entry("SpecialRate", "Giá ngày lễ"),
+            Map.entry("BookingGuest", "Khách lưu trú")
     );
 
     private static final Map<String, String> FIELD_LABELS = Map.ofEntries(
@@ -67,7 +70,23 @@ public final class AuditLabels {
             Map.entry("comment", "Nhận xét"),
             Map.entry("hidden", "Ẩn"),
             Map.entry("type", "Loại"),
-            Map.entry("createdAt", "Ngày tạo")
+            Map.entry("createdAt", "Ngày tạo"),
+            Map.entry("roomAmount", "Tiền phòng"),
+            Map.entry("depositAmount", "Tiền cọc"),
+            Map.entry("depositDeadline", "Hạn chuyển cọc"),
+            Map.entry("depositPaidAt", "Ngày nhận cọc"),
+            Map.entry("weekendSurchargePercent", "Phụ thu cuối tuần (%)"),
+            Map.entry("depositPercent", "Tỷ lệ đặt cọc (%)"),
+            Map.entry("depositDeadlineHours", "Hạn chuyển cọc (giờ)"),
+            Map.entry("startDate", "Từ ngày"),
+            Map.entry("endDate", "Đến ngày"),
+            Map.entry("surchargePercent", "Phụ thu (%)"),
+            Map.entry("dateOfBirth", "Ngày sinh"),
+            Map.entry("gender", "Giới tính"),
+            Map.entry("idType", "Loại giấy tờ"),
+            Map.entry("idNumber", "Số giấy tờ"),
+            Map.entry("nationality", "Quốc tịch"),
+            Map.entry("address", "Nơi thường trú")
     );
 
     private AuditLabels() {

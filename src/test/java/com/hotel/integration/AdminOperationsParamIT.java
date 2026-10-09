@@ -51,6 +51,7 @@ class AdminOperationsParamIT extends ItFixtures {
             "PENDING,cancel,STAFF,CANCELLED", "CONFIRMED,cancel,ADMIN,CANCELLED", "CHECKED_IN,cancel,STAFF,CHECKED_IN", "CHECKED_OUT,cancel,ADMIN,CHECKED_OUT", "CANCELLED,cancel,STAFF,CANCELLED"})
     void lifecycle(BookingStatus from, String action, String who, BookingStatus to) throws Exception {
         Booking b = persistBooking(customer, room, from, 3, 2);
+        declareGuest(b);
         mockMvc.perform(post("/admin/bookings/{id}/" + action, b.getId()).with(csrf()).with(as(actor(who))))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/bookings/" + b.getId()));

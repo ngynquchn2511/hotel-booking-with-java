@@ -3,15 +3,19 @@ package com.hotel.service;
 import com.hotel.entity.*;
 import com.hotel.exception.BusinessException;
 import com.hotel.repository.BookingChargeRepository;
+import com.hotel.repository.BookingGuestRepository;
 import com.hotel.repository.BookingRepository;
 import com.hotel.repository.ComboRepository;
 import com.hotel.repository.DiscountCodeRepository;
+import com.hotel.repository.PricingSettingsRepository;
 import com.hotel.repository.RoomRepository;
+import com.hotel.repository.SpecialRateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -37,6 +41,10 @@ class BookingServiceTest {
     @Mock private DiscountCodeRepository discountCodeRepository;
     @Mock private EmailService emailService;
     @Mock private BookingChargeRepository chargeRepository;
+    @Mock private BookingGuestRepository guestRepository;
+    // Gia that (khong phu thu, khong coc vi repo cai dat rong) - test nao can thi stub them
+    @Spy private PricingService pricingService =
+            new PricingService(mock(PricingSettingsRepository.class), mock(SpecialRateRepository.class));
 
     @InjectMocks
     private BookingService bookingService;
@@ -367,6 +375,7 @@ class BookingServiceTest {
         when(bookingRepository.findById(100L)).thenReturn(Optional.of(b));
         when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
         when(roomRepository.save(any(Room.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(guestRepository.countByBookingId(100L)).thenReturn(1L);
 
         Booking result = bookingService.checkIn(100L);
 
@@ -626,5 +635,65 @@ class BookingServiceTest {
 
         assertEquals(1, trend.size());
         assertEquals(0, BigDecimal.ZERO.compareTo(trend.values().iterator().next()));
+    }
+
+    // ---------- Dat coc / khai bao luu tru ----------
+
+    @Test
+    void createBooking_depositEnabled_setsDepositAndDeadline() {
+        LocalDate in = LocalDate.now().plusDays(10);
+        LocalDate out = in.plusDays(1);
+        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(bookingRepository.existsOverlappingBooking(10L, in, out)).thenReturn(false);
+        when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
+        doReturn(bd(300000)).when(pricingService).roomAmount(room.getPrice(), in, out);
+        doReturn(bd(90000)).when(pricingService).depositFor(any());
+        doReturn(PricingSettings.builder().weekendSurchargePercent(0).depositPercent(30).depositDeadlineHours(12).build())
+                .when(pricingService).getSettings();
+
+        Booking b = bookingService.createBooking(customer, 10L, in, out, LocalTime.of(14, 0), LocalTime.of(12, 0),
+                2, null, null, "A", "0901111111", "a@mail.com");
+
+        assertEquals(0, bd(300000).compareTo(b.getRoomAmount()));
+        assertEquals(0, bd(90000).compareTo(b.getDepositAmount()));
+        assertTrue(b.isAwaitingDeposit());
+        assertTrue(b.getDepositDeadline().isBefore(LocalDateTime.now().plusHours(12).plusMinutes(1)));
+    }
+
+    @Test
+    void confirmDeposit_pendingWithDeposit_confirmsAndRecordsTime() {
+        Booking b = bookingWithCheckIn(LocalDateTime.now().plusDays(3), BookingStatus.PENDING);
+        b.setDepositAmount(bd(90000));
+        when(bookingRepository.findById(100L)).thenReturn(Optional.of(b));
+        when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Booking result = bookingService.confirmDeposit(100L);
+
+        assertEquals(BookingStatus.CONFIRMED, result.getStatus());
+        assertNotNull(result.getDepositPaidAt());
+        assertEquals(0, bd(90000).compareTo(result.getDepositPaidAmount()));
+        verify(emailService).sendBookingConfirmation(result);
+    }
+
+    @Test
+    void confirmDeposit_noDepositOrAlreadyPaid_throws() {
+        Booking b = bookingWithCheckIn(LocalDateTime.now().plusDays(3), BookingStatus.PENDING);
+        when(bookingRepository.findById(100L)).thenReturn(Optional.of(b));
+        assertThrows(BusinessException.class, () -> bookingService.confirmDeposit(100L));
+
+        b.setDepositAmount(bd(90000));
+        b.setDepositPaidAt(LocalDateTime.now());
+        assertThrows(BusinessException.class, () -> bookingService.confirmDeposit(100L));
+    }
+
+    @Test
+    void checkIn_withoutDeclaredGuests_throws() {
+        Booking b = bookingWithCheckIn(LocalDateTime.now().plusHours(1), BookingStatus.CONFIRMED);
+        when(bookingRepository.findById(100L)).thenReturn(Optional.of(b));
+        when(guestRepository.countByBookingId(100L)).thenReturn(0L);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> bookingService.checkIn(100L));
+        assertTrue(ex.getMessage().contains("khai báo lưu trú"));
+        assertEquals(BookingStatus.CONFIRMED, b.getStatus());
     }
 }

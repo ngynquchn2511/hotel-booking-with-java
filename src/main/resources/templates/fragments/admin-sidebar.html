@@ -9,6 +9,8 @@
         <span th:if="${newBookingCount != null and newBookingCount > 0}"
               class="rounded-circle bg-danger new-dot" style="width:10px;height:10px;" th:title="|${newBookingCount} đơn mới|"></span>
     </a>
+    <a th:href="@{/admin/guest-registrations}" class="list-group-item list-group-item-action"
+       th:classappend="${p.startsWith('/admin/guest-registrations')} ? 'active'"><i class="bi bi-person-vcard"></i>Khai báo lưu trú</a>
     <a th:href="@{/admin/customers}" class="list-group-item list-group-item-action"
        th:classappend="${p.startsWith('/admin/customers')} ? 'active'"><i class="bi bi-people"></i>Khách hàng</a>
     <div class="admin-sidebar-title">Danh mục</div>
@@ -23,6 +25,8 @@
     <a th:href="@{/admin/reviews}" class="list-group-item list-group-item-action"
        th:classappend="${p.startsWith('/admin/reviews')} ? 'active'"><i class="bi bi-star"></i>Đánh giá</a>
     <div class="admin-sidebar-title" sec:authorize="hasRole('ADMIN')">Quản trị</div>
+    <a th:href="@{/admin/pricing}" class="list-group-item list-group-item-action" sec:authorize="hasRole('ADMIN')"
+       th:classappend="${p.startsWith('/admin/pricing')} ? 'active'"><i class="bi bi-tags"></i>Giá &amp; đặt cọc</a>
     <a th:href="@{/admin/staff-accounts}" class="list-group-item list-group-item-action" sec:authorize="hasRole('ADMIN')"
        th:classappend="${p.startsWith('/admin/staff-accounts')} ? 'active'"><i class="bi bi-person-badge"></i>Tài khoản nhân viên</a>
     <a th:href="@{/admin/audit-logs}" class="list-group-item list-group-item-action" sec:authorize="hasRole('ADMIN')"

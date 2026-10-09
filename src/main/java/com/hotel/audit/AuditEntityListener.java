@@ -33,7 +33,8 @@ import java.util.function.Consumer;
 public class AuditEntityListener implements PostInsertEventListener, PostUpdateEventListener, PostDeleteEventListener {
 
     // Khong bao gio ghi gia tri that cua cac truong nay vao log
-    private static final Set<String> MASKED_FIELDS = Set.of("password", "resetToken");
+    // So giay to tuy than cua khach luu tru la du lieu ca nhan nhay cam - cung khong ghi vao log
+    private static final Set<String> MASKED_FIELDS = Set.of("password", "resetToken", "idNumber");
     // Truong ky thuat, khong co y nghia nghiep vu (VD: co "don moi" tu tat khi nhan vien mo xem don)
     private static final Set<String> IGNORED_FIELDS = Set.of("newBooking");
 

@@ -34,6 +34,7 @@ abstract class ItFixtures {
     @Autowired protected ComboRepository comboRepository;
     @Autowired protected DiscountCodeRepository discountCodeRepository;
     @Autowired protected PasswordEncoder passwordEncoder;
+    @Autowired protected BookingGuestRepository bookingGuestRepository;
 
     protected static int seq() {
         return SEQ.incrementAndGet();
@@ -66,6 +67,13 @@ abstract class ItFixtures {
     protected DiscountCode persistCode(String code, DiscountType type, long value, CustomerType applicable, boolean active) {
         return discountCodeRepository.save(DiscountCode.builder().code(code).discountType(type).discountValue(BigDecimal.valueOf(value))
                 .applicableCustomerType(applicable).active(active).build());
+    }
+
+    // Khai bao luu tru 1 khach cho don (dieu kien de check-in)
+    protected BookingGuest declareGuest(Booking booking) {
+        return bookingGuestRepository.save(BookingGuest.builder().booking(booking).fullName(booking.getGuestName())
+                .dateOfBirth(LocalDate.of(1990, 1, 1)).gender(Gender.MALE).idType(IdDocumentType.CCCD)
+                .idNumber(String.format("0010900%05d", seq())).nationality("Việt Nam").build());
     }
 
     protected Booking persistBooking(User customer, Room room, BookingStatus status, int inDays, int nights) {

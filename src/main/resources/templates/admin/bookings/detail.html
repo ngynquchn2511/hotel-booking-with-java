@@ -51,7 +51,26 @@
                     Mã giảm giá: <span th:text="${booking.discountCode.code}"></span>
                     (giảm <span th:text="${#numbers.formatDecimal(booking.discountAmount, 1, 0)} + 'VND'"></span>)
                 </p>
+                <p class="mb-1">Tiền phòng (<span th:text="${booking.nights}"></span> đêm):
+                    <span th:text="${#numbers.formatDecimal(booking.effectiveRoomAmount, 1, 0)} + ' VND'"></span></p>
                 <p class="fw-bold fs-5 mb-0">Tổng tiền: <span th:text="${#numbers.formatDecimal(booking.totalAmount, 1, 0)} + 'VND'"></span></p>
+
+                <!-- Dat coc -->
+                <div class="mt-2" th:if="${booking.depositRequired}">
+                    <span th:if="${booking.depositPaid}" class="badge bg-info"
+                          th:text="'Đã nhận cọc ' + ${#numbers.formatDecimal(booking.depositAmount, 1, 0)} + ' VND · ' + ${#temporals.format(booking.depositPaidAt, 'dd/MM/yyyy HH:mm')}"></span>
+                    <th:block th:if="${booking.awaitingDeposit}">
+                        <span class="badge bg-warning" th:text="'Chờ cọc ' + ${#numbers.formatDecimal(booking.depositAmount, 1, 0)} + ' VND'"></span>
+                        <span class="small text-muted ms-1">
+                            nội dung CK <b th:text="${depositTransferContent}"></b>,
+                            hạn <b th:text="${#temporals.format(booking.depositDeadline, 'HH:mm dd/MM/yyyy')}"></b>
+                        </span>
+                    </th:block>
+                    <span th:if="${!booking.depositPaid and !booking.awaitingDeposit}" class="badge bg-secondary">Không nhận cọc</span>
+                    <div class="alert alert-warning small mt-2 mb-0" th:if="${booking.depositPaid and booking.status.name() == 'CANCELLED'}">
+                        Khách đã cọc nhưng đơn đã hủy — liên hệ khách để xử lý hoàn cọc theo chính sách của homestay.
+                    </div>
+                </div>
                 <p class="mb-0 mt-2" th:if="${payment != null}">
                     <span th:class="'badge ' + (${payment.status.name() == 'PAID'} ? 'bg-success' : 'bg-secondary')"
                           th:text="${payment.status.vietnameseLabel}"></span>
@@ -66,12 +85,21 @@
             <div class="bg-white p-4 rounded shadow-sm">
                 <h6 class="fw-bold mb-3">Thao tác</h6>
 
-                <form th:if="${booking.status.name() == 'PENDING'}" th:action="@{/admin/bookings/{id}/confirm(id=${booking.id})}" method="post" class="d-inline">
-                    <button type="submit" class="btn btn-primary">Xác nhận đơn</button>
+                <form th:if="${booking.awaitingDeposit}" th:action="@{/admin/bookings/{id}/confirm-deposit(id=${booking.id})}" method="post" class="d-inline"
+                      th:attr="onsubmit=|return confirm('Xác nhận đã nhận đủ ${#numbers.formatDecimal(booking.depositAmount, 1, 0)} VND tiền cọc?')|">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-cash-coin me-1"></i>Đã nhận cọc &amp; xác nhận</button>
+                </form>
+
+                <!-- Don co yeu cau coc van cho phep xac nhan khong can coc (VD khach quen) -->
+                <form th:if="${booking.status.name() == 'PENDING'}" th:action="@{/admin/bookings/{id}/confirm(id=${booking.id})}" method="post" class="d-inline"
+                      th:attr="onsubmit=${booking.awaitingDeposit} ? 'return confirm(\'Xác nhận đơn mà KHÔNG cần cọc?\')' : null">
+                    <button type="submit" th:class="${booking.awaitingDeposit} ? 'btn btn-outline-primary' : 'btn btn-primary'"
+                            th:text="${booking.awaitingDeposit} ? 'Xác nhận (miễn cọc)' : 'Xác nhận đơn'">Xác nhận đơn</button>
                 </form>
 
                 <form th:if="${booking.status.name() == 'CONFIRMED'}" th:action="@{/admin/bookings/{id}/check-in(id=${booking.id})}" method="post" class="d-inline">
-                    <button type="submit" class="btn btn-success">Check-in</button>
+                    <button type="submit" class="btn btn-success" th:disabled="${#lists.isEmpty(guests)}"
+                            th:title="${#lists.isEmpty(guests)} ? 'Cần khai báo lưu trú ít nhất 1 khách trước khi check-in' : null">Check-in</button>
                 </form>
 
                 <a th:if="${booking.status.name() == 'CHECKED_IN'}" th:href="@{/admin/bookings/{id}/check-out(id=${booking.id})}"
@@ -97,6 +125,81 @@
                 <p class="text-muted small mt-3 mb-0" th:if="${booking.status.name() == 'CANCELLED'}">
                     Đơn này đã bị hủy, không còn thao tác nào khả dụng.
                 </p>
+            </div>
+
+            <!-- Khai bao luu tru: giay to tung khach - bat buoc it nhat 1 nguoi truoc khi check-in -->
+            <div class="bg-white p-4 rounded shadow-sm mt-4" id="khach-luu-tru"
+                 th:if="${canEditGuests or !#lists.isEmpty(guests)}">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold m-0"><i class="bi bi-person-vcard me-1"></i>Khách lưu trú (khai báo lưu trú)</h6>
+                    <span class="small text-muted"
+                          th:text="${#lists.size(guests)} + ' / ' + (${booking.numberOfGuests != null} ? ${booking.numberOfGuests} : 1) + ' khách đã khai báo'"></span>
+                </div>
+
+                <div class="alert alert-warning small" th:if="${canEditGuests and #lists.isEmpty(guests)}">
+                    Chưa khai báo khách nào. Cần nhập giấy tờ ít nhất 1 khách trước khi check-in.
+                </div>
+
+                <div class="table-responsive" th:unless="${#lists.isEmpty(guests)}">
+                    <table class="table table-sm align-middle">
+                        <thead><tr><th>Họ tên</th><th>Ngày sinh</th><th>Giới tính</th><th>Giấy tờ</th><th>Quốc tịch</th><th>Thường trú</th><th></th></tr></thead>
+                        <tbody>
+                        <tr th:each="g : ${guests}">
+                            <td class="fw-semibold" th:text="${g.fullName}"></td>
+                            <td th:text="${#temporals.format(g.dateOfBirth, 'dd/MM/yyyy')}"></td>
+                            <td th:text="${g.gender.vietnameseLabel}"></td>
+                            <td><span class="small text-muted" th:text="${g.idType.vietnameseLabel}"></span><br><span th:text="${g.idNumber}"></span></td>
+                            <td th:text="${g.nationality}"></td>
+                            <td class="small" th:text="${g.address != null} ? ${g.address} : '—'"></td>
+                            <td class="text-end">
+                                <form th:if="${canEditGuests}" th:action="@{/admin/bookings/{id}/guests/{gid}/delete(id=${booking.id}, gid=${g.id})}"
+                                      method="post" onsubmit="return confirm('Xóa khách này khỏi danh sách khai báo?')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <form th:if="${canEditGuests}" th:action="@{/admin/bookings/{id}/guests(id=${booking.id})}" method="post" class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label small">Họ và tên *</label>
+                        <input type="text" name="fullName" class="form-control form-control-sm" maxlength="100" required
+                               th:value="${#lists.isEmpty(guests)} ? ${booking.guestName} : ''">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Ngày sinh *</label>
+                        <input type="date" name="dateOfBirth" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Giới tính *</label>
+                        <select name="gender" class="form-select form-select-sm" required>
+                            <option th:each="gd : ${genders}" th:value="${gd}" th:text="${gd.vietnameseLabel}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Quốc tịch *</label>
+                        <input type="text" name="nationality" class="form-control form-control-sm" value="Việt Nam" maxlength="60" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Loại giấy tờ *</label>
+                        <select name="idType" class="form-select form-select-sm" required>
+                            <option th:each="t : ${idTypes}" th:value="${t}" th:text="${t.vietnameseLabel}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Số giấy tờ *</label>
+                        <input type="text" name="idNumber" class="form-control form-control-sm" maxlength="30" required placeholder="12 số CCCD">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Nơi thường trú</label>
+                        <input type="text" name="address" class="form-control form-control-sm" maxlength="255">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-plus-lg me-1"></i>Thêm</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

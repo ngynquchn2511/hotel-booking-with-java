@@ -3,12 +3,16 @@ package com.hotel.unit;
 import com.hotel.entity.*;
 import com.hotel.exception.BusinessException;
 import com.hotel.repository.BookingChargeRepository;
+import com.hotel.repository.BookingGuestRepository;
 import com.hotel.repository.BookingRepository;
 import com.hotel.repository.ComboRepository;
 import com.hotel.repository.DiscountCodeRepository;
+import com.hotel.repository.PricingSettingsRepository;
 import com.hotel.repository.RoomRepository;
+import com.hotel.repository.SpecialRateRepository;
 import com.hotel.service.BookingService;
 import com.hotel.service.EmailService;
+import com.hotel.service.PricingService;
 import com.hotel.tc.TcSteps;
 import com.hotel.tc.TcSuite;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +24,7 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -50,6 +55,10 @@ class BookingServiceParamTest {
     @Mock private DiscountCodeRepository discountCodeRepository;
     @Mock private EmailService emailService;
     @Mock private BookingChargeRepository chargeRepository;
+    @Mock private BookingGuestRepository guestRepository;
+    // Gia that (khong phu thu, khong coc vi repo cai dat rong) - test nao can thi stub them
+    @Spy private PricingService pricingService =
+            new PricingService(mock(PricingSettingsRepository.class), mock(SpecialRateRepository.class));
 
     @InjectMocks private BookingService bookingService;
 
@@ -63,6 +72,8 @@ class BookingServiceParamTest {
         roomType = RoomType.builder().id(1L).name("Phòng thường").basePrice(bd(200000)).maxGuests(2).build();
         when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
         when(bookingRepository.existsOverlappingBooking(anyLong(), any(), any())).thenReturn(false);
+        // Moi don mock deu da khai bao luu tru 1 khach (dieu kien de check-in)
+        when(guestRepository.countByBookingId(anyLong())).thenReturn(1L);
     }
 
     private static BigDecimal bd(long v) {

@@ -35,10 +35,10 @@ public class ChatbotService {
     private static final String HOTEL_NAME = "Homestay Mây";
     private static final String HOTEL_ADDRESS = "Dốc Tam Đảo, thị trấn Tam Đảo, Vĩnh Phúc";
     private static final String HOTEL_PHONE = "0338932368";
-    private static final String HOTEL_EMAIL = "homestaymay.tamdao@gmail.com";
+    private static final String HOTEL_EMAIL = "mayhomestaytd@gmail.com";
     private static final String HOTEL_FACILITIES = "BBQ ngoài trời, Ban công ngắm mây, Đốt lửa trại, Bếp chung, Thuê xe máy, Wi-Fi và chỗ đỗ xe miễn phí";
-    private static final String CHECK_IN_TIME = "12h trưa (12:00)";
-    private static final String CHECK_OUT_TIME = "9h sáng hôm sau (09:00 hôm sau)";
+    private static final String CHECK_IN_TIME = "14h chiều (14:00)";
+    private static final String CHECK_OUT_TIME = "12h trưa (12:00)";
 
     private final RoomTypeRepository roomTypeRepository;
     private final RoomRepository roomRepository;

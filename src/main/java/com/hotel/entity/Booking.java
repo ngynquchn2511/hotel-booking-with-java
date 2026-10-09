@@ -61,6 +61,23 @@ public class Booking {
     @Column(name = "total_amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal totalAmount;
 
+    // Tien phong da tinh theo tung dem (gom phu thu cuoi tuan / ngay le) luc dat.
+    // Don tao truoc khi co tinh nang nay de null -> dung gia phong x so dem (xem getEffectiveRoomAmount)
+    @Column(name = "room_amount", precision = 12, scale = 2)
+    private BigDecimal roomAmount;
+
+    // Tien coc khach can chuyen de giu phong (0/null = khong yeu cau coc, VD don dat tai quay)
+    @Column(name = "deposit_amount", precision = 12, scale = 2)
+    private BigDecimal depositAmount;
+
+    // Han chot chuyen coc - qua han ma chua coc thi don tu huy
+    @Column(name = "deposit_deadline")
+    private LocalDateTime depositDeadline;
+
+    // Thoi diem nhan vien xac nhan da nhan coc (null = chua nhan)
+    @Column(name = "deposit_paid_at")
+    private LocalDateTime depositPaidAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private BookingStatus status;
@@ -90,6 +107,32 @@ public class Booking {
     @Column(name = "check_in_time_changed", nullable = false)
     @Builder.Default
     private boolean checkInTimeChanged = false;
+
+    public long getNights() {
+        return java.time.temporal.ChronoUnit.DAYS.between(checkInDate, checkOutDate);
+    }
+
+    public BigDecimal getEffectiveRoomAmount() {
+        return roomAmount != null ? roomAmount : room.getPrice().multiply(BigDecimal.valueOf(getNights()));
+    }
+
+    public boolean isDepositRequired() {
+        return depositAmount != null && depositAmount.signum() > 0;
+    }
+
+    public boolean isDepositPaid() {
+        return depositPaidAt != null;
+    }
+
+    // Dang cho khach chuyen coc: co yeu cau coc, chua nhan, don van dang cho xac nhan
+    public boolean isAwaitingDeposit() {
+        return isDepositRequired() && !isDepositPaid() && status == BookingStatus.PENDING;
+    }
+
+    // So tien coc da thu (tru vao luc thanh toan khi tra phong)
+    public BigDecimal getDepositPaidAmount() {
+        return isDepositRequired() && isDepositPaid() ? depositAmount : BigDecimal.ZERO;
+    }
 
     @PrePersist
     protected void onCreate() {

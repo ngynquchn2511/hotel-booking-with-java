@@ -3,10 +3,14 @@ package com.hotel.controller;
 import com.hotel.entity.Booking;
 import com.hotel.entity.BookingStatus;
 import com.hotel.entity.ChargeType;
+import com.hotel.entity.Gender;
+import com.hotel.entity.IdDocumentType;
 import com.hotel.entity.PaymentMethod;
 import com.hotel.exception.BusinessException;
 import com.hotel.service.BookingService;
+import com.hotel.service.GuestRegistrationService;
 import com.hotel.service.PaymentService;
+import org.springframework.format.annotation.DateTimeFormat;
 import com.hotel.util.PaginationUtil;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -23,10 +28,13 @@ public class AdminBookingController {
 
     private final BookingService bookingService;
     private final PaymentService paymentService;
+    private final GuestRegistrationService guestRegistrationService;
 
-    public AdminBookingController(BookingService bookingService, PaymentService paymentService) {
+    public AdminBookingController(BookingService bookingService, PaymentService paymentService,
+                                  GuestRegistrationService guestRegistrationService) {
         this.bookingService = bookingService;
         this.paymentService = paymentService;
+        this.guestRegistrationService = guestRegistrationService;
     }
 
     // Danh sach toan bo booking - dung lam "lich su dat phong" va man hinh check-in/check-out cho STAFF/ADMIN
@@ -51,9 +59,60 @@ public class AdminBookingController {
     // Mo xem chi tiet se tat cac canh bao (don moi / doi gio nhan phong) cua don nay
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
-        model.addAttribute("booking", bookingService.findByIdAndMarkSeenByStaff(id));
+        Booking booking = bookingService.findByIdAndMarkSeenByStaff(id);
+        model.addAttribute("booking", booking);
         model.addAttribute("payment", paymentService.findByBookingId(id).orElse(null));
+        model.addAttribute("guests", guestRegistrationService.findByBooking(id));
+        model.addAttribute("canEditGuests", guestRegistrationService.canEdit(booking));
+        model.addAttribute("genders", Gender.values());
+        model.addAttribute("idTypes", IdDocumentType.values());
+        if (booking.isAwaitingDeposit()) {
+            model.addAttribute("depositTransferContent", paymentService.depositTransferContent(booking));
+        }
         return "admin/bookings/detail";
+    }
+
+    // Kiem tra app ngan hang thay tien coc da vao -> ghi nhan da coc + xac nhan don
+    @PostMapping("/{id}/confirm-deposit")
+    public String confirmDeposit(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            bookingService.confirmDeposit(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã ghi nhận tiền cọc và xác nhận đơn");
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/bookings/" + id;
+    }
+
+    // Khai bao luu tru: them 1 khach (giay to tuy than) vao don
+    @PostMapping("/{id}/guests")
+    public String addGuest(@PathVariable Long id,
+                           @RequestParam(required = false) String fullName,
+                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateOfBirth,
+                           @RequestParam(required = false) Gender gender,
+                           @RequestParam(required = false) IdDocumentType idType,
+                           @RequestParam(required = false) String idNumber,
+                           @RequestParam(required = false) String nationality,
+                           @RequestParam(required = false) String address,
+                           RedirectAttributes redirectAttributes) {
+        try {
+            guestRegistrationService.addGuest(id, fullName, dateOfBirth, gender, idType, idNumber, nationality, address);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã thêm khách lưu trú");
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/bookings/" + id + "#khach-luu-tru";
+    }
+
+    @PostMapping("/{id}/guests/{guestId}/delete")
+    public String removeGuest(@PathVariable Long id, @PathVariable Long guestId, RedirectAttributes redirectAttributes) {
+        try {
+            guestRegistrationService.removeGuest(id, guestId);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa khách lưu trú");
+        } catch (BusinessException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/bookings/" + id + "#khach-luu-tru";
     }
 
     @PostMapping("/{id}/confirm")
@@ -94,6 +153,8 @@ public class AdminBookingController {
         model.addAttribute("accountName", paymentService.getAccountName());
         model.addAttribute("charges", paymentService.findCharges(id));
         model.addAttribute("chargesTotal", paymentService.chargesTotal(id));
+        model.addAttribute("grandTotal", paymentService.grandTotal(booking));
+        model.addAttribute("depositPaid", booking.getDepositPaidAmount());
         model.addAttribute("amountDue", paymentService.amountDue(booking));
         model.addAttribute("chargeTypes", ChargeType.values());
         return "admin/bookings/checkout";

@@ -139,9 +139,11 @@ class SystemJourneyST extends StBase {
 
     @Test
     @Order(10)
-    @TcSteps("Nhân viên bấm Check-in, sau đó mở danh sách phòng")
-    @DisplayName("Check-in cho khách ¦ POST /admin/bookings/<id>/check-in ¦ Đơn \"Đã nhận phòng\", phòng chuyển \"Đang sử dụng\"")
+    @TcSteps("Nhân viên khai báo lưu trú (nhập CCCD của khách), bấm Check-in, sau đó mở danh sách phòng")
+    @DisplayName("Check-in cho khách ¦ POST /admin/bookings/<id>/guests rồi /check-in ¦ Đơn \"Đã nhận phòng\", phòng chuyển \"Đang sử dụng\"")
     void s10_checkIn() {
+        staff.post("/admin/bookings/" + bookingId + "/guests", form("fullName", "Nguyễn Văn An", "dateOfBirth", "1995-05-20",
+                "gender", "MALE", "idType", "CCCD", "idNumber", "001095012345", "nationality", "Việt Nam"));
         Res r = staff.follow(staff.post("/admin/bookings/" + bookingId + "/check-in", form()));
         assertThat(r.body()).contains("Đã nhận phòng").contains("Check-out");
         assertThat(roomRepository.findById(room.getId()).orElseThrow().getStatus()).isEqualTo(RoomStatus.OCCUPIED);

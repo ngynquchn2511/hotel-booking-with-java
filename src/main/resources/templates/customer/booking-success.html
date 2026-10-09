@@ -32,9 +32,34 @@
         <div class="divider"></div>
     </div>
 
-    <div class="alert alert-success fw-bold" th:if="${booking.status.name() == 'PENDING'}">
+    <div class="alert alert-success fw-bold" th:if="${booking.status.name() == 'PENDING' and !booking.awaitingDeposit}">
         <i class="bi bi-check-circle-fill me-1"></i>
         Đặt phòng thành công! Đơn của bạn đang chờ nhân viên xác nhận.
+    </div>
+
+    <!-- Dat coc giu phong: QR VietQR dien san so tien + noi dung chuyen khoan -->
+    <div class="bg-white p-4 rounded shadow-sm mb-4" th:if="${booking.awaitingDeposit}">
+        <h5 class="fw-bold mb-2"><i class="bi bi-shield-check me-2"></i>Chuyển cọc để giữ phòng</h5>
+        <p class="mb-3">
+            Phòng đang được giữ cho bạn. Vui lòng chuyển cọc
+            <b class="text-danger" th:text="${#numbers.formatDecimal(booking.depositAmount, 1, 0)} + ' VND'"></b>
+            trước <b th:text="${#temporals.format(booking.depositDeadline, 'HH:mm dd/MM/yyyy')}"></b>.
+            Quá hạn chưa nhận được cọc, đơn sẽ tự động hủy.
+        </p>
+        <div class="row g-3 align-items-center">
+            <div class="col-sm-5 text-center">
+                <img th:src="${depositQrUrl}" alt="Mã QR chuyển cọc" class="img-fluid rounded border" style="max-width: 240px;">
+            </div>
+            <div class="col-sm-7 small">
+                <p class="mb-1">Ngân hàng: <b th:text="${bankId}"></b></p>
+                <p class="mb-1">Số tài khoản: <b th:text="${accountNo}"></b></p>
+                <p class="mb-1">Chủ tài khoản: <b th:text="${accountName}"></b></p>
+                <p class="mb-1">Số tiền: <b th:text="${#numbers.formatDecimal(booking.depositAmount, 1, 0)} + ' VND'"></b></p>
+                <p class="mb-2">Nội dung: <b th:text="${depositTransferContent}"></b></p>
+                <p class="text-muted mb-0">Quét mã bằng app ngân hàng bất kỳ, số tiền và nội dung đã điền sẵn.
+                    Homestay sẽ xác nhận đơn ngay khi nhận được cọc (bạn sẽ nhận email).</p>
+            </div>
+        </div>
     </div>
 
     <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
@@ -68,6 +93,12 @@
             (giảm <span th:text="${#numbers.formatDecimal(booking.discountAmount, 1, 0)} + 'VND'"></span>)
         </p>
         <p class="fw-bold fs-5 mb-0">Tổng tiền: <span class="price-tag" th:text="${#numbers.formatDecimal(booking.totalAmount, 1, 0)} + 'VND'"></span></p>
+        <p class="mb-0 mt-2" th:if="${booking.depositRequired}">
+            <span th:if="${booking.depositPaid}" class="badge bg-info"
+                  th:text="'Đã đặt cọc ' + ${#numbers.formatDecimal(booking.depositAmount, 1, 0)} + ' VND'"></span>
+            <span th:if="${!booking.depositPaid and booking.status.name() == 'PENDING'}" class="badge bg-warning"
+                  th:text="'Chờ chuyển cọc ' + ${#numbers.formatDecimal(booking.depositAmount, 1, 0)} + ' VND'"></span>
+        </p>
         <p class="mb-0 mt-2">
             <span th:if="${payment != null and payment.status.name() == 'PAID'}" class="badge bg-success"
                   th:text="'Đã thanh toán - ' + ${payment.paymentMethod.vietnameseLabel}"></span>
@@ -84,7 +115,9 @@
 
             <form th:action="@{/customer/bookings/{id}/cancel(id=${booking.id})}" method="post" class="mt-2"
                   th:if="${booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED'}"
-                  onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn đặt phòng này?')">
+                  th:attr="onsubmit=${booking.depositPaid}
+                      ? 'return confirm(\'Bạn đã đặt cọc cho đơn này. Hủy đơn thì việc hoàn cọc theo chính sách của homestay. Vẫn hủy?\')'
+                      : 'return confirm(\'Bạn chắc chắn muốn hủy đơn đặt phòng này?\')'">
                 <button type="submit" class="btn btn-outline-danger w-100">Hủy đặt phòng</button>
             </form>
         </div>

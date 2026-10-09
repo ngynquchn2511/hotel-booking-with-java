@@ -32,6 +32,16 @@ public class EmailService {
     private final String senderEmail;
     private final String senderPassword;
 
+    // Tai khoan nhan tien coc (cung cau hinh voi QR thanh toan trong PaymentService)
+    @Value("${app.payment.bank-id:MB}")
+    private String bankId;
+
+    @Value("${app.payment.account-no:0000000000}")
+    private String accountNo;
+
+    @Value("${app.payment.account-name:HOMESTAY MAY}")
+    private String accountName;
+
     public EmailService(JavaMailSender mailSender,
                         @Value("${spring.mail.username:}") String senderEmail,
                         @Value("${spring.mail.password:}") String senderPassword) {
@@ -127,14 +137,14 @@ public class EmailService {
     // Email HTML dung inline style (Gmail bo qua the <style>), cung tong trang + xanh baby voi website
     private String buildInvoiceHtml(Booking booking, Payment payment, List<BookingCharge> charges) {
         long nights = ChronoUnit.DAYS.between(booking.getCheckInDate(), booking.getCheckOutDate());
-        BigDecimal roomAmount = booking.getRoom().getPrice().multiply(BigDecimal.valueOf(nights));
+        BigDecimal roomAmount = booking.getEffectiveRoomAmount();
         DateTimeFormatter date = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         String paidAt = payment.getPaymentDate() != null
                 ? payment.getPaymentDate().format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")) : "";
 
         StringBuilder rows = new StringBuilder();
         rows.append(invoiceRow("Tiền phòng " + booking.getRoom().getRoomNumber() + " (" + booking.getRoom().getRoomType().getName() + ")",
-                money(booking.getRoom().getPrice()) + " x " + nights + " đêm", money(roomAmount)));
+                nights + " đêm", money(roomAmount)));
         if (booking.getCombo() != null) {
             rows.append(invoiceRow("Combo: " + booking.getCombo().getName(), "1", money(booking.getCombo().getPrice())));
         }
@@ -145,6 +155,9 @@ public class EmailService {
         }
         for (BookingCharge charge : charges) {
             rows.append(invoiceRow("Phụ phí: " + charge.getLabel(), "1", money(charge.getAmount())));
+        }
+        if (booking.getDepositPaidAmount().signum() > 0) {
+            rows.append(invoiceRow("Đã đặt cọc", "", "-" + money(booking.getDepositPaidAmount())));
         }
 
         return """
@@ -167,7 +180,7 @@ public class EmailService {
                         </tr>
                         %s
                         <tr>
-                          <td colspan="2" style="padding:14px 12px;text-align:right;font-weight:bold">Tổng thanh toán</td>
+                          <td colspan="2" style="padding:14px 12px;text-align:right;font-weight:bold">Thanh toán khi trả phòng</td>
                           <td style="padding:14px 12px;text-align:right;font-weight:bold;font-size:18px">%s VND</td>
                         </tr>
                       </table>
@@ -212,6 +225,36 @@ public class EmailService {
         };
     }
 
+    // Huong dan chuyen coc (don moi dat) / bao da nhan coc / bao huy vi qua han coc
+    private void appendDepositInfo(StringBuilder sb, Booking booking) {
+        if (!booking.isDepositRequired()) {
+            return;
+        }
+        DateTimeFormatter deadlineFmt = DateTimeFormatter.ofPattern("HH:mm 'ngày' dd/MM/yyyy");
+        if (booking.isAwaitingDeposit()) {
+            sb.append("ĐẶT CỌC ĐỂ GIỮ PHÒNG\n");
+            sb.append("Số tiền cọc: ").append(money(booking.getDepositAmount())).append(" VND\n");
+            sb.append("Ngân hàng: ").append(bankId).append(" - STK: ").append(accountNo)
+                    .append(" - Chủ TK: ").append(accountName).append("\n");
+            sb.append("Nội dung chuyển khoản: HB").append(booking.getId()).append(" COC\n");
+            if (booking.getDepositDeadline() != null) {
+                sb.append("Hạn chuyển cọc: ").append(booking.getDepositDeadline().format(deadlineFmt))
+                        .append(". Quá hạn chưa nhận được cọc, đơn sẽ tự động hủy.\n");
+            }
+            sb.append("Phần còn lại thanh toán khi trả phòng.\n\n");
+        } else if (booking.getStatus() == BookingStatus.CANCELLED) {
+            if (booking.isDepositPaid()) {
+                sb.append("Bạn đã đặt cọc ").append(money(booking.getDepositAmount()))
+                        .append(" VND. Homestay sẽ liên hệ với bạn về việc hoàn cọc.\n\n");
+            } else if (booking.getDepositDeadline() != null && java.time.LocalDateTime.now().isAfter(booking.getDepositDeadline())) {
+                sb.append("Đơn đã bị hủy do chưa nhận được tiền cọc trước hạn. Bạn có thể đặt lại trên website.\n\n");
+            }
+        } else if (booking.isDepositPaid()) {
+            sb.append("Đã nhận tiền cọc: ").append(money(booking.getDepositAmount()))
+                    .append(" VND. Phần còn lại thanh toán khi trả phòng.\n\n");
+        }
+    }
+
     private String buildBody(Booking booking) {
         StringBuilder sb = new StringBuilder();
         sb.append("Xin chào ").append(booking.getGuestName()).append(",\n\n");
@@ -226,8 +269,9 @@ public class EmailService {
         if (booking.getCombo() != null) {
             sb.append("Combo: ").append(booking.getCombo().getName()).append("\n");
         }
-        sb.append("Tổng tiền: ").append(booking.getTotalAmount()).append(" VND\n\n");
+        sb.append("Tổng tiền: ").append(money(booking.getTotalAmount())).append(" VND\n\n");
         sb.append("Trạng thái đơn: ").append(booking.getStatus().getVietnameseLabel()).append("\n\n");
+        appendDepositInfo(sb, booking);
         sb.append("Trân trọng,\nHomestay Mây");
         return sb.toString();
     }

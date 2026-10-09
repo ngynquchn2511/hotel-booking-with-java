@@ -3,6 +3,7 @@ package com.hotel.service;
 import com.hotel.entity.*;
 import com.hotel.exception.BusinessException;
 import com.hotel.repository.BookingChargeRepository;
+import com.hotel.repository.BookingGuestRepository;
 import com.hotel.repository.BookingRepository;
 import com.hotel.repository.ComboRepository;
 import com.hotel.repository.DiscountCodeRepository;
@@ -37,16 +38,21 @@ public class BookingService {
     private final DiscountCodeRepository discountCodeRepository;
     private final EmailService emailService;
     private final BookingChargeRepository chargeRepository;
+    private final PricingService pricingService;
+    private final BookingGuestRepository guestRepository;
 
     public BookingService(BookingRepository bookingRepository, RoomRepository roomRepository,
                            ComboRepository comboRepository, DiscountCodeRepository discountCodeRepository,
-                           EmailService emailService, BookingChargeRepository chargeRepository) {
+                           EmailService emailService, BookingChargeRepository chargeRepository,
+                           PricingService pricingService, BookingGuestRepository guestRepository) {
         this.bookingRepository = bookingRepository;
         this.roomRepository = roomRepository;
         this.comboRepository = comboRepository;
         this.discountCodeRepository = discountCodeRepository;
         this.emailService = emailService;
         this.chargeRepository = chargeRepository;
+        this.pricingService = pricingService;
+        this.guestRepository = guestRepository;
     }
 
     public static final String DISCOUNT_ALREADY_USED_MESSAGE =
@@ -61,11 +67,39 @@ public class BookingService {
                 .orElse(false);
     }
 
+    // Khach dat online: don cho xac nhan, neu homestay bat dat coc thi kem so tien + han chuyen coc
     @Transactional
     public Booking createBooking(User customer, Long roomId, LocalDate checkInDate, LocalDate checkOutDate,
                                   LocalTime checkInTime, LocalTime checkOutTime, Integer guests,
                                   Long comboId, String discountCodeStr, String guestName, String guestPhone,
                                   String guestEmail) {
+        Booking booking = buildBooking(customer, roomId, checkInDate, checkOutDate, checkInTime, checkOutTime,
+                guests, comboId, discountCodeStr, guestName, guestPhone, guestEmail);
+
+        BigDecimal deposit = pricingService.depositFor(booking.getTotalAmount());
+        booking.setDepositAmount(deposit);
+        if (deposit.signum() > 0) {
+            booking.setDepositDeadline(depositDeadline(checkInDate, checkInTime));
+        }
+
+        Booking savedBooking = bookingRepository.save(booking);
+        emailService.sendBookingConfirmation(savedBooking);
+        return savedBooking;
+    }
+
+    // Han chuyen coc = luc dat + so gio cai dat, nhung khong muon hon 6 tieng truoc gio nhan phong
+    // (moc tu dong huy don chua xac nhan cua BookingExpirationScheduler)
+    private LocalDateTime depositDeadline(LocalDate checkInDate, LocalTime checkInTime) {
+        LocalDateTime deadline = LocalDateTime.now().plusHours(pricingService.getSettings().getDepositDeadlineHours());
+        LocalDateTime latest = LocalDateTime.of(checkInDate, checkInTime).minusHours(EDIT_CUTOFF_HOURS);
+        return deadline.isAfter(latest) ? latest : deadline;
+    }
+
+    // Kiem tra du lieu + tinh tien (theo tung dem) -> tra ve don PENDING CHUA luu
+    private Booking buildBooking(User customer, Long roomId, LocalDate checkInDate, LocalDate checkOutDate,
+                                 LocalTime checkInTime, LocalTime checkOutTime, Integer guests,
+                                 Long comboId, String discountCodeStr, String guestName, String guestPhone,
+                                 String guestEmail) {
 
         if (guestName == null || guestName.isBlank()) {
             throw new BusinessException("Vui lòng nhập họ tên người nhận phòng");
@@ -106,8 +140,8 @@ public class BookingService {
             throw new BusinessException("Rất tiếc, phòng này vừa được người khác đặt mất trong khoảng ngày bạn chọn. Vui lòng chọn phòng hoặc ngày khác");
         }
 
-        long nights = ChronoUnit.DAYS.between(checkInDate, checkOutDate);
-        BigDecimal roomAmount = room.getPrice().multiply(BigDecimal.valueOf(nights));
+        // Tien phong cong tung dem: ngay thuong / cuoi tuan / ngay le co gia khac nhau
+        BigDecimal roomAmount = pricingService.roomAmount(room.getPrice(), checkInDate, checkOutDate);
 
         Combo combo = null;
         BigDecimal comboAmount = BigDecimal.ZERO;
@@ -151,7 +185,7 @@ public class BookingService {
         // Mac dinh 1 khach neu khong nhap (cot number_of_guests khong cho phep null)
         int actualGuests = (guests != null && guests > 0) ? guests : 1;
 
-        Booking booking = Booking.builder()
+        return Booking.builder()
                 .customer(customer)
                 .room(room)
                 .checkInDate(checkInDate)
@@ -165,13 +199,11 @@ public class BookingService {
                 .combo(combo)
                 .discountCode(discountCode)
                 .discountAmount(discountAmount)
+                .roomAmount(roomAmount)
                 .totalAmount(totalAmount)
+                .depositAmount(BigDecimal.ZERO)
                 .status(BookingStatus.PENDING)
                 .build();
-
-        Booking savedBooking = bookingRepository.save(booking);
-        emailService.sendBookingConfirmation(savedBooking);
-        return savedBooking;
     }
 
     public Booking findByIdForCustomer(Long bookingId, Long customerId) {
@@ -221,8 +253,8 @@ public class BookingService {
                     + EDIT_CUTOFF_HOURS + " tiếng so với giờ nhận phòng, và đơn phải chưa check-in/hủy");
         }
 
-        long nights = ChronoUnit.DAYS.between(booking.getCheckInDate(), booking.getCheckOutDate());
-        BigDecimal roomAmount = booking.getRoom().getPrice().multiply(BigDecimal.valueOf(nights));
+        // Giu nguyen tien phong da chot luc dat (gia cuoi tuan/le co the da doi sau do)
+        BigDecimal roomAmount = booking.getEffectiveRoomAmount();
 
         Combo newCombo = null;
         BigDecimal comboAmount = BigDecimal.ZERO;
@@ -252,6 +284,10 @@ public class BookingService {
         booking.setCombo(newCombo);
         booking.setDiscountAmount(discountAmount);
         booking.setTotalAmount(totalAmount);
+        // Chua chuyen coc thi tinh lai tien coc theo tong tien moi; da coc roi thi giu nguyen
+        if (booking.isDepositRequired() && !booking.isDepositPaid()) {
+            booking.setDepositAmount(pricingService.depositFor(totalAmount));
+        }
 
         return bookingRepository.save(booking);
     }
@@ -310,12 +346,36 @@ public class BookingService {
         return confirmedBooking;
     }
 
+    // Nhan vien thay tien coc da vao tai khoan -> ghi nhan da coc va xac nhan don luon
+    @Transactional
+    public Booking confirmDeposit(Long bookingId) {
+        Booking booking = findById(bookingId);
+        if (!booking.isDepositRequired()) {
+            throw new BusinessException("Đơn này không yêu cầu đặt cọc");
+        }
+        if (booking.isDepositPaid()) {
+            throw new BusinessException("Đơn này đã được ghi nhận đặt cọc trước đó");
+        }
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new BusinessException("Chỉ ghi nhận đặt cọc cho đơn đang ở trạng thái Chờ xác nhận");
+        }
+        booking.setDepositPaidAt(LocalDateTime.now());
+        booking.setStatus(BookingStatus.CONFIRMED);
+        Booking confirmedBooking = bookingRepository.save(booking);
+        emailService.sendBookingConfirmation(confirmedBooking);
+        return confirmedBooking;
+    }
+
     // BR-04: chi booking da CONFIRMED moi duoc check-in
+    // Khai bao luu tru: phai nhap giay to it nhat 1 khach truoc khi cho nhan phong
     @Transactional
     public Booking checkIn(Long bookingId) {
         Booking booking = findById(bookingId);
         if (booking.getStatus() != BookingStatus.CONFIRMED) {
             throw new BusinessException("Chỉ có thể check-in đơn đã được xác nhận (CONFIRMED)");
+        }
+        if (guestRepository.countByBookingId(bookingId) == 0) {
+            throw new BusinessException("Vui lòng khai báo lưu trú (nhập giấy tờ ít nhất 1 khách) trước khi check-in");
         }
         booking.setStatus(BookingStatus.CHECKED_IN);
 
@@ -354,12 +414,15 @@ public class BookingService {
                                         LocalTime checkInTime, LocalTime checkOutTime, Integer guests,
                                         Long comboId, String guestName, String guestPhone, String guestEmail) {
 
-        Booking booking = createBooking(customer, roomId, checkInDate, checkOutDate, checkInTime, checkOutTime,
+        Booking booking = buildBooking(customer, roomId, checkInDate, checkOutDate, checkInTime, checkOutTime,
                 guests, comboId, null, guestName, guestPhone, guestEmail);
+        // Khach o ngay tai quay -> khong can dat coc, xac nhan luon
         booking.setStatus(BookingStatus.CONFIRMED);
         // Nhan vien tu tay tao don nay nen khong can bao "don moi"
         booking.setNewBooking(false);
-        return bookingRepository.save(booking);
+        Booking savedBooking = bookingRepository.save(booking);
+        emailService.sendBookingConfirmation(savedBooking);
+        return savedBooking;
     }
 
     // Nhan vien/admin huy don thay khach (VD: khach goi dien nho huy) - khong kiem tra chu don nhu ben customer

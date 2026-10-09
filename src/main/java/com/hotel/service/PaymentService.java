@@ -3,6 +3,7 @@ package com.hotel.service;
 import com.hotel.entity.*;
 import com.hotel.exception.BusinessException;
 import com.hotel.repository.BookingChargeRepository;
+import com.hotel.repository.BookingRepository;
 import com.hotel.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class PaymentService {
     private final BookingService bookingService;
     private final EmailService emailService;
     private final BookingChargeRepository chargeRepository;
+    private final BookingRepository bookingRepository;
 
     @Value("${app.payment.bank-id:MB}")
     private String bankId;
@@ -42,11 +44,12 @@ public class PaymentService {
     private String accountName;
 
     public PaymentService(PaymentRepository paymentRepository, BookingService bookingService, EmailService emailService,
-                          BookingChargeRepository chargeRepository) {
+                          BookingChargeRepository chargeRepository, BookingRepository bookingRepository) {
         this.paymentRepository = paymentRepository;
         this.bookingService = bookingService;
         this.emailService = emailService;
         this.chargeRepository = chargeRepository;
+        this.bookingRepository = bookingRepository;
     }
 
     public Optional<Payment> findByBookingId(Long bookingId) {
@@ -71,11 +74,25 @@ public class PaymentService {
         return TRANSFER_PREFIX + booking.getId();
     }
 
+    // Noi dung chuyen coc, VD "HB15 COC" - phan biet voi tien thanh toan khi tra phong
+    public String depositTransferContent(Booking booking) {
+        return TRANSFER_PREFIX + booking.getId() + " COC";
+    }
+
     // Anh QR VietQR (chuan Napas) - app ngan hang nao quet cung tu dien san so tien va noi dung chuyen khoan
     public String buildQrUrl(Booking booking) {
+        return vietQrUrl(amountDue(booking), transferContent(booking));
+    }
+
+    // QR chuyen tien coc, hien cho khach ngay sau khi dat phong
+    public String buildDepositQrUrl(Booking booking) {
+        return vietQrUrl(booking.getDepositAmount(), depositTransferContent(booking));
+    }
+
+    private String vietQrUrl(BigDecimal amount, String content) {
         return "https://img.vietqr.io/image/" + bankId + "-" + accountNo + "-compact2.png"
-                + "?amount=" + amountDue(booking).setScale(0, RoundingMode.HALF_UP).toPlainString()
-                + "&addInfo=" + URLEncoder.encode(transferContent(booking), StandardCharsets.UTF_8)
+                + "?amount=" + amount.setScale(0, RoundingMode.HALF_UP).toPlainString()
+                + "&addInfo=" + URLEncoder.encode(content, StandardCharsets.UTF_8)
                 + "&accountName=" + URLEncoder.encode(accountName, StandardCharsets.UTF_8);
     }
 
@@ -101,9 +118,14 @@ public class PaymentService {
         return findCharges(bookingId).stream().map(BookingCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    // Tong khach phai tra khi check-out = tien don (phong + combo - giam gia) + phu phi
-    public BigDecimal amountDue(Booking booking) {
+    // Tong gia tri don = tien don (phong + combo - giam gia) + phu phi
+    public BigDecimal grandTotal(Booking booking) {
         return booking.getTotalAmount().add(chargesTotal(booking.getId()));
+    }
+
+    // Con phai thu khi check-out = tong gia tri don - tien coc da nhan
+    public BigDecimal amountDue(Booking booking) {
+        return grandTotal(booking).subtract(booking.getDepositPaidAmount()).max(BigDecimal.ZERO);
     }
 
     @Transactional
@@ -215,20 +237,31 @@ public class PaymentService {
         data.put("booking", booking);
         data.put("payment", payment);
         data.put("nights", nights);
-        data.put("roomAmount", booking.getRoom().getPrice().multiply(BigDecimal.valueOf(nights)));
+        data.put("roomAmount", booking.getEffectiveRoomAmount());
+        // Gia moi dem co the khac nhau (cuoi tuan / ngay le) -> hoa don hien don gia trung binh
+        data.put("roomUnitPrice", nights > 0
+                ? booking.getEffectiveRoomAmount().divide(BigDecimal.valueOf(nights), 0, RoundingMode.HALF_UP)
+                : booking.getRoom().getPrice());
+        data.put("grandTotal", grandTotal(booking));
+        data.put("depositPaid", booking.getDepositPaidAmount());
         data.put("invoiceNo", payment.getInvoiceNo());
         data.put("charges", findCharges(booking.getId()));
         return data;
     }
 
     // Thong ke tien DA THU theo phuong thuc, loc theo ngay thanh toan trong [fromDate, toDate]
+    // Gom ca tien coc (chuyen khoan) tinh theo ngay nhan coc - ke ca don sau do bi huy ma homestay giu coc
     public Map<PaymentMethod, BigDecimal> getPaidRevenueByMethod(LocalDate fromDate, LocalDate toDate) {
         Map<PaymentMethod, BigDecimal> result = new LinkedHashMap<>();
         result.put(PaymentMethod.CASH, BigDecimal.ZERO);
         result.put(PaymentMethod.BANK_TRANSFER, BigDecimal.ZERO);
-        for (Payment p : paymentRepository.findByStatusAndPaymentDateBetween(
-                PaymentStatus.PAID, fromDate.atStartOfDay(), toDate.plusDays(1).atStartOfDay().minusNanos(1))) {
+        LocalDateTime from = fromDate.atStartOfDay();
+        LocalDateTime to = toDate.plusDays(1).atStartOfDay().minusNanos(1);
+        for (Payment p : paymentRepository.findByStatusAndPaymentDateBetween(PaymentStatus.PAID, from, to)) {
             result.merge(p.getPaymentMethod(), p.getAmount(), BigDecimal::add);
+        }
+        for (Booking b : bookingRepository.findByDepositPaidAtBetween(from, to)) {
+            result.merge(PaymentMethod.BANK_TRANSFER, b.getDepositPaidAmount(), BigDecimal::add);
         }
         return result;
     }
