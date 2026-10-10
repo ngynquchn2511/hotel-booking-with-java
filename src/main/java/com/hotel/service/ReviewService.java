@@ -3,12 +3,15 @@ package com.hotel.service;
 import com.hotel.entity.Booking;
 import com.hotel.entity.BookingStatus;
 import com.hotel.entity.Review;
+import com.hotel.entity.ReviewMedia;
 import com.hotel.exception.BusinessException;
 import com.hotel.repository.ReviewRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +26,14 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final BookingService bookingService;
+    private final FileStorageService fileStorageService;
 
-    public ReviewService(ReviewRepository reviewRepository, BookingService bookingService) {
+    // Toi da so anh + video dinh kem moi danh gia
+    public static final int MAX_MEDIA_PER_REVIEW = 5;
+
+    public ReviewService(ReviewRepository reviewRepository, BookingService bookingService,
+                         FileStorageService fileStorageService) {
+        this.fileStorageService = fileStorageService;
         this.reviewRepository = reviewRepository;
         this.bookingService = bookingService;
     }
@@ -52,19 +61,32 @@ public class ReviewService {
 
     @Transactional
     public Review createReview(Long bookingId, Long customerId, Integer rating, String comment) {
+        return createReview(bookingId, customerId, rating, comment, List.of());
+    }
+
+    // Danh gia kem anh / video (tong cong toi da MAX_MEDIA_PER_REVIEW tep). Kiem tra het dieu kien truoc roi moi
+    // luu tep; luu loi giua chung thi xoa cac tep da luu de khong de rac tren o dia
+    @Transactional
+    public Review createReview(Long bookingId, Long customerId, Integer rating, String comment,
+                               List<MultipartFile> files) {
+        List<MultipartFile> uploads = files == null ? List.of()
+                : files.stream().filter(f -> f != null && !f.isEmpty()).toList();
+        if (uploads.size() > MAX_MEDIA_PER_REVIEW) {
+            throw BusinessException.of("err.mediaTooMany", MAX_MEDIA_PER_REVIEW);
+        }
         Booking booking = bookingService.findByIdForCustomer(bookingId, customerId);
         if (booking.getStatus() != BookingStatus.CHECKED_OUT) {
-            throw new BusinessException("Chỉ có thể đánh giá sau khi đã trả phòng");
+            throw BusinessException.of("err.reviewNotCheckedOut");
         }
         if (reviewRepository.existsByBookingId(bookingId)) {
-            throw new BusinessException("Bạn đã đánh giá đơn này rồi");
+            throw BusinessException.of("err.reviewDuplicate");
         }
         if (rating == null || rating < 1 || rating > 5) {
-            throw new BusinessException("Vui lòng chọn số sao từ 1 đến 5");
+            throw BusinessException.of("err.reviewRating");
         }
         String text = comment == null ? null : comment.trim();
         if (text != null && text.length() > MAX_COMMENT_LENGTH) {
-            throw new BusinessException("Nhận xét tối đa " + MAX_COMMENT_LENGTH + " ký tự");
+            throw BusinessException.of("err.reviewTooLong", MAX_COMMENT_LENGTH);
         }
         Review review = Review.builder()
                 .booking(booking)
@@ -72,6 +94,18 @@ public class ReviewService {
                 .rating(rating)
                 .comment(text == null || text.isEmpty() ? null : text)
                 .build();
+        List<String> saved = new ArrayList<>();
+        try {
+            for (int i = 0; i < uploads.size(); i++) {
+                FileStorageService.StoredMedia stored = fileStorageService.storeReviewMedia(uploads.get(i));
+                saved.add(stored.url());
+                review.getMedia().add(ReviewMedia.builder().review(review).url(stored.url())
+                        .mediaType(stored.type()).sortOrder(i).build());
+            }
+        } catch (RuntimeException ex) {
+            saved.forEach(fileStorageService::delete);
+            throw ex;
+        }
         return reviewRepository.save(review);
     }
 

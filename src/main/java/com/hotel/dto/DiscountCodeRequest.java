@@ -20,6 +20,9 @@ public class DiscountCodeRequest {
 
     private String description;
 
+    // Ban tieng Anh (tuy chon)
+    private String descriptionEn;
+
     @NotNull(message = "Vui lòng chọn loại giảm giá")
     private DiscountType discountType;
 

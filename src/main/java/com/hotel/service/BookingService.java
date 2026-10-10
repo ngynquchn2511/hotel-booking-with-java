@@ -80,27 +80,31 @@ public class BookingService {
             return !conflicts.isEmpty() && conflicts.stream().allMatch(b -> b.getStatus() == BookingStatus.PENDING);
         }
 
-        // Cau thong bao cho khach khi khong dat duoc
+        // Cau thong bao cho khach khi khong dat duoc (tieng Viet)
         public String describe() {
+            return describe(BusinessException::vietnamese);
+        }
+
+        // Cau thong bao theo ngon ngu cua translator (giao dien khach song ngu)
+        public String describe(BusinessException.Translator t) {
             if (maintenance) {
-                return "Phòng đang bảo trì, tạm ngưng nhận đặt. Vui lòng chọn phòng khác";
+                return t.t("avail.maintenance");
             }
             if (conflicts.isEmpty()) {
                 return null;
             }
-            StringBuilder sb = new StringBuilder("Phòng đã có khách trong khoảng ngày bạn chọn: ");
             List<String> parts = new java.util.ArrayList<>();
             for (Booking b : conflicts) {
-                parts.add((b.getStatus() == BookingStatus.PENDING ? "đơn chờ xác nhận " : "đơn đã xác nhận ")
-                        + b.getCheckInDate().format(DAY_FMT) + " – " + b.getCheckOutDate().format(DAY_FMT));
+                parts.add(t.t(b.getStatus() == BookingStatus.PENDING ? "avail.pendingRange" : "avail.confirmedRange",
+                        b.getCheckInDate().format(DAY_FMT), b.getCheckOutDate().format(DAY_FMT)));
             }
-            sb.append(String.join(", ", parts)).append(".");
+            StringBuilder sb = new StringBuilder(t.t("avail.taken", String.join(", ", parts)));
             if (freeFrom != null) {
-                sb.append(" Phòng trống trở lại từ ").append(freeFrom.format(TIME_FMT))
-                        .append(" ngày ").append(freeFrom.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))).append(".");
+                sb.append(' ').append(t.t("avail.freeFrom", freeFrom.format(TIME_FMT),
+                        freeFrom.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
             }
             if (isOnlyPendingConflicts()) {
-                sb.append(" Đơn chờ xác nhận có thể bị hủy nếu khách không đặt cọc — bạn có thể quay lại kiểm tra sau.");
+                sb.append(' ').append(t.t("avail.pendingNote"));
             }
             return sb.toString();
         }
@@ -156,14 +160,12 @@ public class BookingService {
     private void checkTurnoverTimes(Availability availability, LocalDate checkInDate, LocalTime checkInTime,
                                     LocalDate checkOutDate, LocalTime checkOutTime) {
         if (availability.earliestCheckIn() != null && checkInTime.isBefore(availability.earliestCheckIn())) {
-            throw new BusinessException("Ngày " + checkInDate.format(DAY_FMT) + " khách trước trả phòng lúc "
-                    + availability.earliestCheckIn().format(TIME_FMT) + ". Vui lòng chọn giờ nhận phòng từ "
-                    + availability.earliestCheckIn().format(TIME_FMT) + " trở đi");
+            throw BusinessException.of("err.turnover.checkIn", checkInDate.format(DAY_FMT),
+                    availability.earliestCheckIn().format(TIME_FMT));
         }
         if (availability.latestCheckOut() != null && checkOutTime.isAfter(availability.latestCheckOut())) {
-            throw new BusinessException("Ngày " + checkOutDate.format(DAY_FMT) + " có khách nhận phòng lúc "
-                    + availability.latestCheckOut().format(TIME_FMT) + ". Vui lòng chọn giờ trả phòng trước "
-                    + availability.latestCheckOut().format(TIME_FMT));
+            throw BusinessException.of("err.turnover.checkOut", checkOutDate.format(DAY_FMT),
+                    availability.latestCheckOut().format(TIME_FMT));
         }
     }
 
@@ -174,7 +176,7 @@ public class BookingService {
         try {
             return roomRepository.findByIdForUpdate(roomId);
         } catch (PessimisticLockingFailureException | QueryTimeoutException ex) {
-            throw new BusinessException("Phòng này đang có người khác đặt cùng lúc. Vui lòng thử lại sau vài giây");
+            throw BusinessException.of("err.roomBusy");
         }
     }
 
@@ -192,9 +194,6 @@ public class BookingService {
                             + ". Hãy liên hệ khách để đổi phòng/ngày hoặc hủy đơn này");
                 });
     }
-
-    public static final String DISCOUNT_ALREADY_USED_MESSAGE =
-            "Bạn đã sử dụng mã giảm giá này rồi. Mỗi mã chỉ được dùng 1 lần cho mỗi khách hàng";
 
     // Dung cho nut "Kiem tra ma" (xem truoc) - luong tao booking van tu kiem tra lai trong createBooking
     public boolean hasUsedDiscountCode(Long customerId, String code) {
@@ -240,45 +239,46 @@ public class BookingService {
                                  String guestEmail) {
 
         if (guestName == null || guestName.isBlank()) {
-            throw new BusinessException("Vui lòng nhập họ tên người nhận phòng");
+            throw BusinessException.of("err.guestName");
         }
         if (guestPhone == null || guestPhone.isBlank()) {
-            throw new BusinessException("Vui lòng nhập số điện thoại người nhận phòng");
+            throw BusinessException.of("err.guestPhone");
         }
         if (guestEmail == null || guestEmail.isBlank()) {
-            throw new BusinessException("Email nguoi nhan phong khong duoc de trong");
+            throw BusinessException.of("err.guestEmail");
         }
         if (!guestEmail.trim().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
-            throw new BusinessException("Email nguoi nhan phong khong hop le");
+            throw BusinessException.of("err.guestEmailInvalid");
         }
         if (checkInDate == null || checkOutDate == null) {
-            throw new BusinessException("Vui lòng chọn đầy đủ ngày nhận phòng và ngày trả phòng");
+            throw BusinessException.of("err.datesRequired");
         }
         if (checkInTime == null || checkOutTime == null) {
-            throw new BusinessException("Vui lòng chọn đầy đủ giờ nhận phòng và giờ trả phòng");
+            throw BusinessException.of("err.timesRequired");
         }
         // BR-02
         if (!checkOutDate.isAfter(checkInDate)) {
-            throw new BusinessException("Ngày trả phòng phải lớn hơn ngày nhận phòng");
+            throw BusinessException.of("err.checkOutAfterCheckIn");
         }
         if (checkInDate.isBefore(LocalDate.now())) {
-            throw new BusinessException("Ngày nhận phòng không được ở trong quá khứ");
+            throw BusinessException.of("err.checkInPast");
         }
 
         Room room = lockRoom(roomId)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy phòng"));
+                .orElseThrow(() -> BusinessException.of("err.roomNotFound"));
 
         // BR-03
         if (room.getStatus() == RoomStatus.MAINTENANCE) {
-            throw new BusinessException("Phòng này đang bảo trì, không thể đặt");
+            throw BusinessException.of("err.roomMaintenance");
         }
 
         // BR-01 - kiem tra lai lan cuoi ngay truoc khi luu, phong truong hop phong bi dat mat trong luc khach dang xem
         Availability availability = checkAvailability(room, checkInDate, checkOutDate);
         if (bookingRepository.existsOverlappingBooking(roomId, checkInDate, checkOutDate)) {
-            String detail = availability.describe();
-            throw new BusinessException(detail != null ? detail
-                    : "Rất tiếc, phòng này vừa được người khác đặt mất trong khoảng ngày bạn chọn. Vui lòng chọn phòng hoặc ngày khác");
+            throw BusinessException.rendered(t -> {
+                String detail = availability.describe(t);
+                return detail != null ? detail : t.t("err.roomJustTaken");
+            });
         }
         checkTurnoverTimes(availability, checkInDate, checkInTime, checkOutDate, checkOutTime);
 
@@ -289,7 +289,7 @@ public class BookingService {
         BigDecimal comboAmount = BigDecimal.ZERO;
         if (comboId != null) {
             combo = comboRepository.findById(comboId)
-                    .orElseThrow(() -> new BusinessException("Không tìm thấy combo đã chọn"));
+                    .orElseThrow(() -> BusinessException.of("err.comboNotFound"));
             comboAmount = combo.getPrice();
         }
 
@@ -299,16 +299,16 @@ public class BookingService {
         BigDecimal discountAmount = BigDecimal.ZERO;
         if (discountCodeStr != null && !discountCodeStr.isBlank()) {
             discountCode = discountCodeRepository.findByCodeAndActiveTrue(discountCodeStr.trim().toUpperCase())
-                    .orElseThrow(() -> new BusinessException("Mã giảm giá không tồn tại hoặc đã ngừng áp dụng"));
+                    .orElseThrow(() -> BusinessException.of("err.discountInvalid"));
 
             if (discountCode.getApplicableCustomerType() != null
                     && discountCode.getApplicableCustomerType() != customer.getCustomerType()) {
-                throw new BusinessException("Mã giảm giá này không áp dụng cho loại khách hàng của bạn");
+                throw BusinessException.of("err.discountCustomerType");
             }
 
             if (bookingRepository.existsByCustomerIdAndDiscountCodeIdAndStatusNot(
                     customer.getId(), discountCode.getId(), BookingStatus.CANCELLED)) {
-                throw new BusinessException(DISCOUNT_ALREADY_USED_MESSAGE);
+                throw BusinessException.of("err.discountUsed");
             }
 
             if (discountCode.getDiscountType() == DiscountType.PERCENTAGE) {
@@ -350,9 +350,9 @@ public class BookingService {
 
     public Booking findByIdForCustomer(Long bookingId, Long customerId) {
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy đơn đặt phòng"));
+                .orElseThrow(() -> BusinessException.of("err.bookingNotFound"));
         if (!booking.getCustomer().getId().equals(customerId)) {
-            throw new BusinessException("Bạn không có quyền xem đơn đặt phòng này");
+            throw BusinessException.of("err.bookingForbidden");
         }
         return booking;
     }
@@ -372,8 +372,7 @@ public class BookingService {
                 return booking;
             }
         }
-        throw new BusinessException("Không tìm thấy đơn đặt phòng. Vui lòng mở đúng đường link trong email xác nhận, "
-                + "hoặc đăng nhập bằng tài khoản đã đặt phòng");
+        throw BusinessException.of("err.bookingLinkInvalid");
     }
 
     public List<Booking> findAllForCustomer(Long customerId) {
@@ -393,11 +392,10 @@ public class BookingService {
     public Booking updateTimes(Long bookingId, Long customerId, LocalTime newCheckInTime, LocalTime newCheckOutTime) {
         Booking booking = findByIdForCustomer(bookingId, customerId);
         if (!canModify(booking)) {
-            throw new BusinessException("Không thể sửa giờ nhận/trả phòng — chỉ được sửa trước "
-                    + EDIT_CUTOFF_HOURS + " tiếng so với giờ nhận phòng, và đơn phải chưa check-in/hủy");
+            throw BusinessException.of("err.editTimesClosed", EDIT_CUTOFF_HOURS);
         }
         if (newCheckInTime == null || newCheckOutTime == null) {
-            throw new BusinessException("Vui lòng chọn đầy đủ giờ nhận và trả phòng");
+            throw BusinessException.of("err.editTimesRequired");
         }
         checkTurnoverTimes(checkAvailability(booking.getRoom(), booking.getCheckInDate(), booking.getCheckOutDate(), booking.getId()),
                 booking.getCheckInDate(), newCheckInTime, booking.getCheckOutDate(), newCheckOutTime);
@@ -412,8 +410,7 @@ public class BookingService {
     public Booking updateCombo(Long bookingId, Long customerId, Long newComboId) {
         Booking booking = findByIdForCustomer(bookingId, customerId);
         if (!canModify(booking)) {
-            throw new BusinessException("Không thể thay đổi combo — chỉ được sửa trước "
-                    + EDIT_CUTOFF_HOURS + " tiếng so với giờ nhận phòng, và đơn phải chưa check-in/hủy");
+            throw BusinessException.of("err.editComboClosed", EDIT_CUTOFF_HOURS);
         }
 
         // Giu nguyen tien phong da chot luc dat (gia cuoi tuan/le co the da doi sau do)
@@ -423,7 +420,7 @@ public class BookingService {
         BigDecimal comboAmount = BigDecimal.ZERO;
         if (newComboId != null) {
             newCombo = comboRepository.findById(newComboId)
-                    .orElseThrow(() -> new BusinessException("Không tìm thấy combo"));
+                    .orElseThrow(() -> BusinessException.of("err.comboMissing"));
             comboAmount = newCombo.getPrice();
         }
 
@@ -460,7 +457,7 @@ public class BookingService {
     public Booking cancelBooking(Long bookingId, Long customerId) {
         Booking booking = findByIdForCustomer(bookingId, customerId);
         if (booking.getStatus() != BookingStatus.PENDING && booking.getStatus() != BookingStatus.CONFIRMED) {
-            throw new BusinessException("Không thể hủy đơn ở trạng thái hiện tại (" + booking.getStatus() + ")");
+            throw BusinessException.of("err.cancelState", booking.getStatus().name());
         }
         booking.setStatus(BookingStatus.CANCELLED);
         Booking cancelledBooking = bookingRepository.save(booking);

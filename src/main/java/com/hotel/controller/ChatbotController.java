@@ -1,6 +1,7 @@
 package com.hotel.controller;
 
 import com.hotel.service.ChatbotService;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,7 +30,8 @@ public class ChatbotController {
         if (message != null && message.length() > MAX_MESSAGE_LENGTH) {
             message = message.substring(0, MAX_MESSAGE_LENGTH);
         }
-        ChatbotService.Reply reply = chatbotService.reply(message);
+        // Tra loi theo ngon ngu khach dang chon (nut VI/EN, luu trong cookie "lang")
+        ChatbotService.Reply reply = chatbotService.reply(message, LocaleContextHolder.getLocale());
         return Map.of(
                 "reply", reply.text(),
                 "actions", reply.actions(),

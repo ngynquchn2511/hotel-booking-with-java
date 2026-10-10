@@ -17,13 +17,17 @@ import com.hotel.service.RoomService;
 import com.hotel.util.PaginationUtil;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.hotel.service.UserMessages;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -48,12 +52,14 @@ public class CustomerBookingController {
     private final PaymentService paymentService;
     private final ReviewService reviewService;
     private final PricingService pricingService;
+    private final UserMessages userMessages;
 
     public CustomerBookingController(BookingService bookingService, RoomService roomService,
                                       ComboService comboService, DiscountCodeService discountCodeService,
                                       CustomerManagementService customerManagementService,
                                       PaymentService paymentService, ReviewService reviewService,
-                                      PricingService pricingService) {
+                                      PricingService pricingService, UserMessages userMessages) {
+        this.userMessages = userMessages;
         this.bookingService = bookingService;
         this.roomService = roomService;
         this.comboService = comboService;
@@ -152,7 +158,7 @@ public class CustomerBookingController {
             // Kem ma truy cap de khach vang lai xem lai duoc don (khong can dang nhap)
             return "redirect:/customer/bookings/" + booking.getId() + "?token=" + booking.getAccessToken();
         } catch (BusinessException ex) {
-            model.addAttribute("errorMessage", ex.getMessage());
+            model.addAttribute("errorMessage", userMessages.of(ex));
             rebuildModel(model, roomId, checkIn, checkOut, guests, comboId);
             return "customer/booking-confirm";
         }
@@ -185,15 +191,16 @@ public class CustomerBookingController {
             BigDecimal discountAmount = discountCodeService.validateAndCalculateDiscount(code, customerType, subtotal);
             // Khach vang lai chua biet la ai (chua nhap email) - se duoc kiem tra lai khi bam Xac nhan dat phong
             if (userDetails != null && bookingService.hasUsedDiscountCode(userDetails.getUser().getId(), code)) {
-                throw new BusinessException(BookingService.DISCOUNT_ALREADY_USED_MESSAGE);
+                throw BusinessException.of("err.discountUsed");
             }
 
             result.put("valid", true);
             result.put("discountAmount", discountAmount);
-            result.put("message", "Mã hợp lệ — giảm " + discountAmount + " VND");
+            result.put("message", userMessages.get("msg.discountValid",
+                    NumberFormat.getIntegerInstance(LocaleContextHolder.getLocale()).format(discountAmount)));
         } catch (BusinessException ex) {
             result.put("valid", false);
-            result.put("message", ex.getMessage());
+            result.put("message", userMessages.of(ex));
         }
         return result;
     }
@@ -232,7 +239,7 @@ public class CustomerBookingController {
             Booking booking = bookingService.findByIdForCustomer(id, userDetails.getUser().getId());
             model.addAllAttributes(paymentService.buildInvoiceData(booking));
         } catch (BusinessException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", userMessages.of(ex));
             return "redirect:/customer/bookings";
         }
         model.addAttribute("backUrl", "/customer/bookings/" + id);
@@ -244,13 +251,14 @@ public class CustomerBookingController {
     public String review(@PathVariable Long id,
                          @RequestParam(required = false) Integer rating,
                          @RequestParam(required = false) String comment,
+                         @RequestParam(value = "media", required = false) List<MultipartFile> media,
                          @AuthenticationPrincipal CustomUserDetails userDetails,
                          RedirectAttributes redirectAttributes) {
         try {
-            reviewService.createReview(id, userDetails.getUser().getId(), rating, comment);
-            redirectAttributes.addFlashAttribute("reviewSuccess", "Cảm ơn bạn đã đánh giá! Ý kiến của bạn giúp chúng tôi phục vụ tốt hơn.");
+            reviewService.createReview(id, userDetails.getUser().getId(), rating, comment, media);
+            redirectAttributes.addFlashAttribute("reviewSuccess", userMessages.get("msg.reviewThanks"));
         } catch (BusinessException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", userMessages.of(ex));
         }
         return "redirect:/customer/bookings/" + id + "#danh-gia";
     }
@@ -264,7 +272,7 @@ public class CustomerBookingController {
         try {
             bookingService.updateTimes(id, userDetails.getUser().getId(), checkInTime, checkOutTime);
         } catch (BusinessException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", userMessages.of(ex));
         }
         return "redirect:/customer/bookings/" + id;
     }
@@ -277,7 +285,7 @@ public class CustomerBookingController {
         try {
             bookingService.updateCombo(id, userDetails.getUser().getId(), comboId);
         } catch (BusinessException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", userMessages.of(ex));
         }
         return "redirect:/customer/bookings/" + id;
     }
@@ -289,7 +297,7 @@ public class CustomerBookingController {
         try {
             bookingService.cancelBooking(id, userDetails.getUser().getId());
         } catch (BusinessException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", userMessages.of(ex));
         }
         return "redirect:/customer/bookings/" + id;
     }
@@ -321,7 +329,7 @@ public class CustomerBookingController {
         if (nights > 0) {
             BookingService.Availability availability = bookingService.checkAvailability(room, checkIn, checkOut);
             model.addAttribute("availability", availability);
-            model.addAttribute("availabilityMessage", availability.describe());
+            model.addAttribute("availabilityMessage", availability.describe(userMessages::get));
         }
         var settings = pricingService.getSettings();
         model.addAttribute("depositPercent", settings.getDepositPercent());

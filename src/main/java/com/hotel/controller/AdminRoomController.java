@@ -134,6 +134,7 @@ public class AdminRoomController {
         request.setRoomTypeId(room.getRoomType().getId());
         request.setPrice(room.getPrice());
         request.setDescription(room.getDescription());
+        request.setDescriptionEn(room.getDescriptionEn());
 
         model.addAttribute("roomRequest", request);
         model.addAttribute("roomTypes", roomTypeService.findAll());

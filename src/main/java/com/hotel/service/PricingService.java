@@ -33,8 +33,10 @@ public class PricingService {
         this.specialRateRepository = specialRateRepository;
     }
 
-    // Gia 1 dem: night = ngay bat dau dem (o tu night den night + 1), label de hien thi cho khach
-    public record NightPrice(LocalDate night, BigDecimal price, String label) {
+    // Gia 1 dem: night = ngay bat dau dem (o tu night den night + 1), label de hien thi cho khach (tieng Viet).
+    // specialName (theo ngon ngu khach chon) + surchargePercent de giao dien song ngu tu ghep nhan
+    // (specialName = null: cuoi tuan / ngay thuong)
+    public record NightPrice(LocalDate night, BigDecimal price, String label, String specialName, int surchargePercent) {
 
         // "Thứ 6", "Chủ nhật"... - tu viet de khong phu thuoc locale cua may chu
         public String dayName() {
@@ -77,7 +79,8 @@ public class PricingService {
             if (percent > 0) {
                 label += " (+" + percent + "%)";
             }
-            nights.add(new NightPrice(night, applySurcharge(basePrice, percent), label));
+            nights.add(new NightPrice(night, applySurcharge(basePrice, percent), label,
+                    special != null ? special.getLocalizedName() : null, percent));
         }
         return nights;
     }
@@ -140,6 +143,13 @@ public class PricingService {
 
     @Transactional
     public SpecialRate createSpecialRate(String name, LocalDate startDate, LocalDate endDate, Integer surchargePercent) {
+        return createSpecialRate(name, null, startDate, endDate, surchargePercent);
+    }
+
+    // nameEn: ten tieng Anh tuy chon (bo trong thi khach tieng Anh thay ten tieng Viet)
+    @Transactional
+    public SpecialRate createSpecialRate(String name, String nameEn, LocalDate startDate, LocalDate endDate,
+                                         Integer surchargePercent) {
         String trimmed = name == null ? "" : name.trim();
         if (trimmed.isEmpty() || trimmed.length() > 100) {
             throw new BusinessException("Tên dịp lễ không được để trống và tối đa 100 ký tự");
@@ -155,6 +165,7 @@ public class PricingService {
         }
         return specialRateRepository.save(SpecialRate.builder()
                 .name(trimmed)
+                .nameEn(nameEn == null || nameEn.isBlank() ? null : nameEn.trim())
                 .startDate(startDate)
                 .endDate(endDate)
                 .surchargePercent(surchargePercent)

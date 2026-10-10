@@ -40,6 +40,8 @@ public class ComboService {
         Combo combo = Combo.builder()
                 .name(request.getName())
                 .description(request.getDescription())
+                .nameEn(blankToNull(request.getNameEn()))
+                .descriptionEn(blankToNull(request.getDescriptionEn()))
                 .price(request.getPrice())
                 .maxGuests(request.getMaxGuests())
                 .imageUrl(imageUrl)
@@ -53,6 +55,8 @@ public class ComboService {
         Combo combo = findById(id);
         combo.setName(request.getName());
         combo.setDescription(request.getDescription());
+        combo.setNameEn(blankToNull(request.getNameEn()));
+        combo.setDescriptionEn(blankToNull(request.getDescriptionEn()));
         combo.setPrice(request.getPrice());
         combo.setMaxGuests(request.getMaxGuests());
 
@@ -77,5 +81,10 @@ public class ComboService {
         Combo combo = findById(id);
         fileStorageService.delete(combo.getImageUrl());
         comboRepository.deleteById(id);
+    }
+
+    // O ban tieng Anh de trong -> luu null (trang khach tu dung ban tieng Viet)
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

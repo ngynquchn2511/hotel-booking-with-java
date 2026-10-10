@@ -45,12 +45,13 @@ public class AdminPricingController {
 
     @PostMapping("/special-rates")
     public String createSpecialRate(@RequestParam(required = false) String name,
+                                    @RequestParam(required = false) String nameEn,
                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
                                     @RequestParam(required = false) Integer surchargePercent,
                                     RedirectAttributes redirectAttributes) {
         try {
-            pricingService.createSpecialRate(name, startDate, endDate, surchargePercent);
+            pricingService.createSpecialRate(name, nameEn, startDate, endDate, surchargePercent);
             redirectAttributes.addFlashAttribute("successMessage", "Đã thêm giai đoạn giá ngày lễ");
         } catch (BusinessException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());

@@ -62,6 +62,8 @@ public class AdminComboController {
         ComboRequest request = new ComboRequest();
         request.setName(combo.getName());
         request.setDescription(combo.getDescription());
+        request.setNameEn(combo.getNameEn());
+        request.setDescriptionEn(combo.getDescriptionEn());
         request.setPrice(combo.getPrice());
         request.setMaxGuests(combo.getMaxGuests());
 

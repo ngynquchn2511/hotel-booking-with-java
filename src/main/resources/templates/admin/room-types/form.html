@@ -32,6 +32,12 @@
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label">Tên loại phòng <span class="badge bg-info text-dark">EN</span> <span class="text-muted small">(không bắt buộc — bỏ trống thì khách chọn tiếng Anh vẫn thấy bản tiếng Việt)</span></label>
+                        <input type="text" th:field="*{nameEn}" class="form-control" maxlength="100" placeholder="VD: VIP Room">
+                        <div class="text-danger small" th:if="${#fields.hasErrors('nameEn')}" th:errors="*{nameEn}"></div>
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label">Giá cơ bản (VND / đêm)</label>
                         <input type="number" step="1000" th:field="*{basePrice}" class="form-control" th:readonly="${!#authorization.expression('hasRole(''ADMIN'')')}">
                         <div class="text-danger small" th:if="${#fields.hasErrors('basePrice')}" th:errors="*{basePrice}"></div>
@@ -55,8 +61,20 @@
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label">Mô tả <span class="badge bg-info text-dark">EN</span> <span class="text-muted small">(không bắt buộc — bỏ trống thì khách chọn tiếng Anh vẫn thấy bản tiếng Việt)</span></label>
+                        <textarea th:field="*{descriptionEn}" class="form-control" rows="3" maxlength="1000"></textarea>
+                        <div class="text-danger small" th:if="${#fields.hasErrors('descriptionEn')}" th:errors="*{descriptionEn}"></div>
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label">Tiện nghi (cách nhau bởi dấu phẩy)</label>
                         <input type="text" th:field="*{amenities}" class="form-control" placeholder="Wi-Fi, TV, Điều hòa, Mini Bar">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Tiện nghi <span class="badge bg-info text-dark">EN</span> <span class="text-muted small">(không bắt buộc — bỏ trống thì khách chọn tiếng Anh vẫn thấy bản tiếng Việt)</span></label>
+                        <input type="text" th:field="*{amenitiesEn}" class="form-control" maxlength="500" placeholder="Wi-Fi, TV, Air conditioning, Mini bar">
+                        <div class="text-danger small" th:if="${#fields.hasErrors('amenitiesEn')}" th:errors="*{amenitiesEn}"></div>
                     </div>
 
                     <div class="d-flex gap-2">

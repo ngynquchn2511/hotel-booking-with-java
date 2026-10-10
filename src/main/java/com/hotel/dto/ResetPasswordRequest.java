@@ -9,13 +9,13 @@ import lombok.Setter;
 @Setter
 public class ResetPasswordRequest {
 
-    @NotBlank(message = "Liên kết đặt lại mật khẩu không hợp lệ")
+    @NotBlank(message = "{val.resetToken.required}")
     private String token;
 
-    @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
+    @NotBlank(message = "{val.password.required}")
+    @Size(min = 6, message = "{val.password.min}")
     private String password;
 
-    @NotBlank(message = "Vui lòng xác nhận mật khẩu")
+    @NotBlank(message = "{val.password.confirm}")
     private String confirmPassword;
 }

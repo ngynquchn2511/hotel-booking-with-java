@@ -66,7 +66,7 @@
                             <option th:each="rt : ${roomTypes}"
                                     th:value="${rt.id}"
                                     th:text="${rt.name}"
-                                    th:attr="data-price=${rt.basePrice},data-description=${rt.description}"></option>
+                                    th:attr="data-price=${rt.basePrice},data-description=${rt.description},data-description-en=${rt.descriptionEn}"></option>
                         </select>
                         <div class="text-danger small" th:if="${#fields.hasErrors('roomTypeId')}" th:errors="*{roomTypeId}"></div>
                     </div>
@@ -81,6 +81,12 @@
                     <div class="mb-3">
                         <label class="form-label">Mô tả</label>
                         <textarea th:field="*{description}" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Mô tả <span class="badge bg-info text-dark">EN</span> <span class="text-muted small">(không bắt buộc — bỏ trống thì khách chọn tiếng Anh vẫn thấy bản tiếng Việt)</span></label>
+                        <textarea th:field="*{descriptionEn}" class="form-control" rows="3" maxlength="1000"></textarea>
+                        <div class="text-danger small" th:if="${#fields.hasErrors('descriptionEn')}" th:errors="*{descriptionEn}"></div>
                     </div>
 
                     <div class="mb-3">
@@ -106,6 +112,7 @@
         const roomTypeSelect = document.getElementById('roomTypeId');
         const priceInput = document.getElementById('price');
         const descriptionInput = document.getElementById('description');
+        const descriptionEnInput = document.getElementById('descriptionEn');
 
         roomTypeSelect.addEventListener('change', () => {
             const selectedType = roomTypeSelect.options[roomTypeSelect.selectedIndex];
@@ -113,6 +120,7 @@
                 priceInput.value = selectedType.dataset.price || '';
             }
             descriptionInput.value = selectedType.dataset.description || '';
+            descriptionEnInput.value = selectedType.dataset.descriptionEn || '';
         });
     });
 </script>

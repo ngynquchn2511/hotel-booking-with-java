@@ -6,6 +6,7 @@ import com.hotel.exception.BusinessException;
 import com.hotel.service.EmailService;
 import com.hotel.service.UserService;
 import jakarta.validation.Valid;
+import com.hotel.service.UserMessages;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -20,8 +21,10 @@ public class AuthController {
 
     private final UserService userService;
     private final EmailService emailService;
+    private final UserMessages userMessages;
 
-    public AuthController(UserService userService, EmailService emailService) {
+    public AuthController(UserService userService, EmailService emailService, UserMessages userMessages) {
+        this.userMessages = userMessages;
         this.userService = userService;
         this.emailService = emailService;
     }
@@ -48,7 +51,7 @@ public class AuthController {
         try {
             userService.registerCustomer(request);
         } catch (BusinessException ex) {
-            model.addAttribute("errorMessage", ex.getMessage());
+            model.addAttribute("errorMessage", userMessages.of(ex));
             return "auth/register";
         }
 
@@ -63,13 +66,13 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public String forgotPassword(@RequestParam(value = "email", required = false) String email, Model model) {
         if (email == null || email.isBlank()) {
-            model.addAttribute("errorMessage", "Vui lòng nhập email");
+            model.addAttribute("errorMessage", userMessages.get("err.enterEmail"));
             return "auth/forgot-password";
         }
 
         var user = userService.createPasswordResetToken(email).orElse(null);
         if (user == null) {
-            model.addAttribute("errorMessage", "Email này chưa được đăng ký tài khoản khách hàng");
+            model.addAttribute("errorMessage", userMessages.get("err.emailNotRegistered"));
             model.addAttribute("email", email.trim());
             return "auth/forgot-password";
         }
@@ -107,7 +110,7 @@ public class AuthController {
         try {
             userService.resetPassword(request.getToken(), request.getPassword(), request.getConfirmPassword());
         } catch (BusinessException ex) {
-            model.addAttribute("errorMessage", ex.getMessage());
+            model.addAttribute("errorMessage", userMessages.of(ex));
             return "auth/reset-password";
         }
 

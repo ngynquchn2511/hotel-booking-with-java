@@ -1,5 +1,6 @@
 package com.hotel.service;
 
+import com.hotel.entity.MediaType;
 import com.hotel.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,16 @@ import java.util.UUID;
 public class FileStorageService {
 
     private static final List<String> ALLOWED_EXTENSIONS = List.of("jpg", "jpeg", "png", "webp");
+    private static final List<String> VIDEO_EXTENSIONS = List.of("mp4", "webm", "mov");
+
+    // Gioi han dung luong tung file (gioi han multipart cua server dat cao hon de nhan duoc video)
+    public static final int MAX_IMAGE_MB = 5;
+    public static final int MAX_VIDEO_MB = 30;
+    private static final long MB = 1024L * 1024;
+
+    // Ket qua luu 1 tep dinh kem danh gia
+    public record StoredMedia(String url, MediaType type) {
+    }
 
     // Thu muc goc chua toan bo file upload, VD: uploads/rooms, uploads/combos
     @Value("${app.upload.base-dir}")
@@ -34,7 +45,39 @@ public class FileStorageService {
         if (!ALLOWED_EXTENSIONS.contains(extension.toLowerCase())) {
             throw new BusinessException("Chỉ chấp nhận file ảnh định dạng jpg, jpeg, png hoặc webp");
         }
+        if (file.getSize() > MAX_IMAGE_MB * MB) {
+            throw new BusinessException("Mỗi ảnh tối đa " + MAX_IMAGE_MB + "MB");
+        }
+        return save(file, subDir, extension);
+    }
 
+    // Anh / video khach dinh kem khi danh gia: anh jpg/png/webp toi da 5MB, video mp4/webm/mov toi da 30MB
+    public StoredMedia storeReviewMedia(MultipartFile file) {
+        String extension = getExtension(file.getOriginalFilename()).toLowerCase();
+        MediaType type;
+        if (ALLOWED_EXTENSIONS.contains(extension)) {
+            type = MediaType.IMAGE;
+            if (file.getSize() > MAX_IMAGE_MB * MB) {
+                throw BusinessException.of("err.mediaImageTooLarge", MAX_IMAGE_MB);
+            }
+        } else if (VIDEO_EXTENSIONS.contains(extension)) {
+            type = MediaType.VIDEO;
+            if (file.getSize() > MAX_VIDEO_MB * MB) {
+                throw BusinessException.of("err.mediaVideoTooLarge", MAX_VIDEO_MB);
+            }
+        } else {
+            throw BusinessException.of("err.mediaType");
+        }
+        // Chan file doi duoi (VD .exe doi thanh .mp4): loai noi dung trinh duyet bao phai khop
+        String contentType = file.getContentType();
+        if (contentType != null && !contentType.isBlank() && !"application/octet-stream".equals(contentType)
+                && !contentType.startsWith(type == MediaType.IMAGE ? "image/" : "video/")) {
+            throw BusinessException.of("err.mediaType");
+        }
+        return new StoredMedia(save(file, "reviews", extension), type);
+    }
+
+    private String save(MultipartFile file, String subDir, String extension) {
         try {
             Path uploadPath = Paths.get(baseUploadDir, subDir).toAbsolutePath().normalize();
             Files.createDirectories(uploadPath);

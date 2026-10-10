@@ -57,6 +57,17 @@ class ChatbotAndMiscIT {
                 .andExpect(jsonPath("$.reply").value(org.hamcrest.Matchers.containsString("Giờ nhận phòng")));
     }
 
+    // Khach da chon EN (cookie "lang") -> chatbot tra loi tieng Anh
+    @Test
+    void chatbot_englishSelected_repliesInEnglish() throws Exception {
+        mockMvc.perform(post("/api/chatbot/ask").with(csrf())
+                        .cookie(new jakarta.servlet.http.Cookie("lang", "en"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"message\": \"What time is check-in?\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.reply").value(org.hamcrest.Matchers.containsString("Check-in: **14:00**")));
+    }
+
     @Test
     void chatbot_emptyMessage_returnsDefaultPromptNotError() throws Exception {
         mockMvc.perform(post("/api/chatbot/ask").with(csrf())

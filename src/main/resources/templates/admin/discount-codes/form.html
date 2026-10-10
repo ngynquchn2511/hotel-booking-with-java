@@ -39,6 +39,11 @@
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label">Mô tả <span class="badge bg-info text-dark">EN</span> <span class="text-muted small">(không bắt buộc — bỏ trống thì khách chọn tiếng Anh vẫn thấy bản tiếng Việt)</span></label>
+                        <textarea th:field="*{descriptionEn}" class="form-control" rows="2" placeholder="VD: Discount for first-time guests"></textarea>
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label">Loại giảm giá</label>
                         <select th:field="*{discountType}" class="form-select">
                             <option th:each="t : ${discountTypes}" th:value="${t}" th:text="${t.vietnameseLabel}"></option>

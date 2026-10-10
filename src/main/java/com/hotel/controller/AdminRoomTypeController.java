@@ -65,6 +65,9 @@ public class AdminRoomTypeController {
         request.setArea(roomType.getArea());
         request.setDescription(roomType.getDescription());
         request.setAmenities(roomType.getAmenities());
+        request.setNameEn(roomType.getNameEn());
+        request.setDescriptionEn(roomType.getDescriptionEn());
+        request.setAmenitiesEn(roomType.getAmenitiesEn());
 
         model.addAttribute("roomTypeRequest", request);
         model.addAttribute("roomTypeId", id);

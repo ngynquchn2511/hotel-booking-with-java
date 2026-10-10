@@ -39,6 +39,9 @@ public class RoomTypeService {
                 .area(request.getArea())
                 .description(request.getDescription())
                 .amenities(request.getAmenities())
+                .nameEn(blankToNull(request.getNameEn()))
+                .descriptionEn(blankToNull(request.getDescriptionEn()))
+                .amenitiesEn(blankToNull(request.getAmenitiesEn()))
                 .build();
         return roomTypeRepository.save(roomType);
     }
@@ -52,6 +55,9 @@ public class RoomTypeService {
         roomType.setArea(request.getArea());
         roomType.setDescription(request.getDescription());
         roomType.setAmenities(request.getAmenities());
+        roomType.setNameEn(blankToNull(request.getNameEn()));
+        roomType.setDescriptionEn(blankToNull(request.getDescriptionEn()));
+        roomType.setAmenitiesEn(blankToNull(request.getAmenitiesEn()));
         return roomTypeRepository.save(roomType);
     }
 
@@ -64,5 +70,10 @@ public class RoomTypeService {
             throw new BusinessException("Không thể xóa loại phòng này vì vẫn còn phòng thuộc loại phòng đó");
         }
         roomTypeRepository.deleteById(id);
+    }
+
+    // O ban tieng Anh de trong -> luu null (trang khach tu dung ban tieng Viet)
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

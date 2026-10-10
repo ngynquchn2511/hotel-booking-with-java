@@ -41,6 +41,7 @@ public class DiscountCodeService {
         DiscountCode discountCode = DiscountCode.builder()
                 .code(request.getCode().toUpperCase())
                 .description(request.getDescription())
+                .descriptionEn(request.getDescriptionEn() == null || request.getDescriptionEn().isBlank() ? null : request.getDescriptionEn().trim())
                 .discountType(request.getDiscountType())
                 .discountValue(request.getDiscountValue())
                 .applicableCustomerType(request.getApplicableCustomerType())
@@ -58,6 +59,7 @@ public class DiscountCodeService {
         }
         discountCode.setCode(request.getCode().toUpperCase());
         discountCode.setDescription(request.getDescription());
+        discountCode.setDescriptionEn(request.getDescriptionEn() == null || request.getDescriptionEn().isBlank() ? null : request.getDescriptionEn().trim());
         discountCode.setDiscountType(request.getDiscountType());
         discountCode.setDiscountValue(request.getDiscountValue());
         discountCode.setApplicableCustomerType(request.getApplicableCustomerType());
@@ -84,12 +86,12 @@ public class DiscountCodeService {
         String normalizedCode = code == null ? "" : code.trim().toUpperCase();
         Optional<DiscountCode> discountOpt = discountCodeRepository.findByCodeAndActiveTrue(normalizedCode);
         if (discountOpt.isEmpty()) {
-            throw new BusinessException("Mã giảm giá không tồn tại hoặc đã ngừng áp dụng");
+            throw BusinessException.of("err.discountInvalid");
         }
         DiscountCode discount = discountOpt.get();
 
         if (discount.getApplicableCustomerType() != null && discount.getApplicableCustomerType() != customerType) {
-            throw new BusinessException("Mã giảm giá này không áp dụng cho loại khách hàng của bạn");
+            throw BusinessException.of("err.discountCustomerType");
         }
 
         if (discount.getDiscountType() == DiscountType.PERCENTAGE) {

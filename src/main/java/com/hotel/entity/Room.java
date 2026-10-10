@@ -1,5 +1,6 @@
 package com.hotel.entity;
 
+import com.hotel.util.Texts;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,6 +39,15 @@ public class Room {
 
     @Column(length = 1000)
     private String description;
+
+    // Ban tieng Anh (tuy chon) cho khach chon EN - bo trong thi hien ban tieng Viet
+    @Column(name = "description_en", length = 1000)
+    private String descriptionEn;
+
+    // Mo ta theo ngon ngu khach dang chon (dung tren trang khach)
+    public String getLocalizedDescription() {
+        return Texts.pick(description, descriptionEn);
+    }
 
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

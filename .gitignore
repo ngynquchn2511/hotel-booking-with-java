@@ -6,3 +6,10 @@ uploads/
 .DS_Store
 run.log
 .claude/settings.local.json
+~$*
+deploy/.env
+
+# Tai lieu bao cao / file Office ca nhan o thu muc goc - khong dua len GitHub
+/*.docx
+/*.xlsx
+/*.pdf

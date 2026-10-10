@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="vi" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Giới thiệu | Homestay Mây</title>
+    <title th:text="#{about.title}">Giới thiệu | Homestay Mây</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600;1,9..144,700&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -200,18 +200,18 @@
     <div class="container text-center py-5">
         <div class="badge-glass mb-4 reveal">
             <span class="stars"><i class="bi bi-star-fill" style="animation-delay:.1s"></i><i class="bi bi-star-fill" style="animation-delay:.2s"></i><i class="bi bi-star-fill" style="animation-delay:.3s"></i><i class="bi bi-star-fill" style="animation-delay:.4s"></i><i class="bi bi-star-fill" style="animation-delay:.5s"></i></span>
-            <span>HOMESTAY GIỮA MÂY NGÀN TAM ĐẢO</span>
+            <span th:text="#{about.hero.badge}">HOMESTAY GIỮA MÂY NGÀN TAM ĐẢO</span>
         </div>
-        <h1 class="hero-title mb-3 reveal">Chào mừng đến<br><span class="gradient-text">Homestay Mây</span></h1>
+        <h1 class="hero-title mb-3 reveal" th:utext="#{about.hero.title}">Chào mừng đến<br><span class="gradient-text">Homestay Mây</span></h1>
         <p class="fs-4 mb-5 reveal" style="min-height:2.2em">
-            Nơi mang đến cho bạn <span class="typing" id="typing">kỳ nghỉ trọn vẹn</span>
+            <span th:text="#{about.hero.lead}">Nơi mang đến cho bạn</span> <span class="typing" id="typing" th:text="${#strings.arraySplit(#messages.msg('about.hero.typing'), ';')[0]}">kỳ nghỉ trọn vẹn</span>
         </p>
         <div class="d-flex flex-wrap gap-3 justify-content-center reveal">
-            <a th:href="@{/rooms}" class="btn btn-glow btn-lg"><i class="bi bi-calendar2-heart me-2"></i>Đặt phòng ngay</a>
-            <a href="#cau-chuyen" class="btn btn-ghost btn-lg"><i class="bi bi-play-circle me-2"></i>Khám phá</a>
+            <a th:href="@{/rooms}" class="btn btn-glow btn-lg"><i class="bi bi-calendar2-heart me-2"></i><span th:text="#{about.cta.book}">Đặt phòng ngay</span></a>
+            <a href="#cau-chuyen" class="btn btn-ghost btn-lg"><i class="bi bi-play-circle me-2"></i><span th:text="#{about.cta.explore}">Khám phá</span></a>
         </div>
     </div>
-    <a href="#cau-chuyen" class="scroll-down" aria-label="Cuộn xuống"></a>
+    <a href="#cau-chuyen" class="scroll-down" th:aria-label="#{about.scroll}"></a>
 </section>
 
 <!-- ================= THONG KE ================= -->
@@ -221,28 +221,28 @@
             <div class="stat-card">
                 <div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#22d3ee)"><i class="bi bi-door-open"></i></div>
                 <div class="stat-num gradient-text"><span class="counter" th:attr="data-to=${roomCount}">0</span>+</div>
-                <div class="muted small">Phòng nghỉ</div>
+                <div class="muted small" th:text="#{about.stat.rooms}">Phòng nghỉ</div>
             </div>
         </div>
         <div class="col-6 col-lg-3 reveal">
             <div class="stat-card">
                 <div class="stat-icon" style="background:linear-gradient(135deg,#8b5cf6,#ec4899)"><i class="bi bi-gem"></i></div>
                 <div class="stat-num gradient-text"><span class="counter" th:attr="data-to=${#lists.size(roomTypes)}">0</span></div>
-                <div class="muted small">Hạng phòng</div>
+                <div class="muted small" th:text="#{about.stat.types}">Hạng phòng</div>
             </div>
         </div>
         <div class="col-6 col-lg-3 reveal">
             <div class="stat-card">
                 <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#ef4444)"><i class="bi bi-cup-hot"></i></div>
                 <div class="stat-num gradient-text"><span class="counter" th:attr="data-to=${#lists.size(combos)}">0</span></div>
-                <div class="muted small">Combo ẩm thực</div>
+                <div class="muted small" th:text="#{about.stat.combos}">Combo ẩm thực</div>
             </div>
         </div>
         <div class="col-6 col-lg-3 reveal">
             <div class="stat-card">
                 <div class="stat-icon" style="background:linear-gradient(135deg,#10b981,#22d3ee)"><i class="bi bi-emoji-heart-eyes"></i></div>
                 <div class="stat-num gradient-text"><span class="counter" data-to="98">0</span>%</div>
-                <div class="muted small">Khách hài lòng</div>
+                <div class="muted small" th:text="#{about.stat.happy}">Khách hài lòng</div>
             </div>
         </div>
     </div>
@@ -254,25 +254,25 @@
         <div class="row align-items-center g-5">
             <div class="col-lg-6 reveal left">
                 <div class="collage">
-                    <img class="c1" src="/page-images/anhphongVIP.jpg" alt="Phòng VIP">
-                    <img class="c2" src="/page-images/viewcuasogiuongdoi.jpg" alt="View cửa sổ phòng giường đôi">
+                    <img class="c1" src="/page-images/anhphongVIP.jpg" th:alt="#{about.story.img1}">
+                    <img class="c2" src="/page-images/viewcuasogiuongdoi.jpg" th:alt="#{about.story.img2}">
                     <div class="ring"></div>
                     <div class="experience">
                         <div class="serif fs-2 fw-bold lh-1">24/7</div>
-                        <div class="small">Phục vụ tận tâm</div>
+                        <div class="small" th:text="#{about.story.service}">Phục vụ tận tâm</div>
                     </div>
                 </div>
             </div>
             <div class="col-lg-6 reveal right">
-                <div class="eyebrow mb-2">Về chúng tôi</div>
-                <h2 class="section-title mb-3">Không chỉ là nơi nghỉ chân, mà là <span class="gradient-text">trải nghiệm</span></h2>
+                <div class="eyebrow mb-2" th:text="#{about.story.eyebrow}">Về chúng tôi</div>
+                <h2 class="section-title mb-3" th:utext="#{about.story.title}">Không chỉ là nơi nghỉ chân, mà là <span class="gradient-text">trải nghiệm</span></h2>
                 <div class="divider mb-4"></div>
-                <p class="muted fs-5">Homestay Mây nằm trên Dốc Tam Đảo, Tam Đảo, Vĩnh Phúc — nơi quanh năm mây phủ, khí hậu mát lành, lý tưởng cho kỳ nghỉ cuối tuần cùng gia đình, nhóm bạn hay cặp đôi. Mỗi căn phòng được bài trí ấm cúng, gần gũi thiên nhiên mà vẫn đầy đủ tiện nghi.</p>
-                <p class="muted">Với hệ thống đặt phòng trực tuyến, bạn có thể tìm phòng trống, chọn combo ẩm thực, áp mã giảm giá và nhận xác nhận qua email chỉ trong vài phút.</p>
+                <p class="muted fs-5" th:text="#{about.story.p1}">Homestay Mây nằm trên Dốc Tam Đảo, Tam Đảo, Vĩnh Phúc — nơi quanh năm mây phủ, khí hậu mát lành, lý tưởng cho kỳ nghỉ cuối tuần cùng gia đình, nhóm bạn hay cặp đôi. Mỗi căn phòng được bài trí ấm cúng, gần gũi thiên nhiên mà vẫn đầy đủ tiện nghi.</p>
+                <p class="muted" th:text="#{about.story.p2}">Với hệ thống đặt phòng trực tuyến, bạn có thể tìm phòng trống, chọn combo ẩm thực, áp mã giảm giá và nhận xác nhận qua email chỉ trong vài phút.</p>
                 <ul class="check-list ps-0 mt-4">
-                    <li><i class="bi bi-patch-check-fill"></i><span>Phòng sạch sẽ, được dọn dẹp và kiểm tra trước mỗi lượt khách</span></li>
-                    <li><i class="bi bi-patch-check-fill"></i><span>Giá minh bạch, ưu đãi riêng cho khách quen và khách VIP</span></li>
-                    <li><i class="bi bi-patch-check-fill"></i><span>Đội ngũ lễ tân hỗ trợ check-in, check-out nhanh chóng</span></li>
+                    <li><i class="bi bi-patch-check-fill"></i><span th:text="#{about.story.check1}">Phòng sạch sẽ, được dọn dẹp và kiểm tra trước mỗi lượt khách</span></li>
+                    <li><i class="bi bi-patch-check-fill"></i><span th:text="#{about.story.check2}">Giá minh bạch, ưu đãi riêng cho khách quen và khách VIP</span></li>
+                    <li><i class="bi bi-patch-check-fill"></i><span th:text="#{about.story.check3}">Đội ngũ lễ tân hỗ trợ check-in, check-out nhanh chóng</span></li>
                 </ul>
             </div>
         </div>
@@ -283,44 +283,44 @@
 <section class="block facilities" id="tien-ich">
     <div class="container">
         <div class="text-center mb-5 reveal">
-            <div class="eyebrow mb-2">Tiện ích</div>
-            <h2 class="section-title">Chậm lại một chút, <span class="gradient-text">sống giữa mây</span></h2>
+            <div class="eyebrow mb-2" th:text="#{about.fac.eyebrow}">Tiện ích</div>
+            <h2 class="section-title" th:utext="#{about.fac.title}">Chậm lại một chút, <span class="gradient-text">sống giữa mây</span></h2>
         </div>
         <div class="row g-4">
             <div class="col-md-6 col-lg-4 reveal">
                 <div class="feature tilt"><span class="glow"></span>
                     <div class="feature-icon"><i class="bi bi-fire"></i></div>
-                    <h3 class="h5 fw-bold">BBQ ngoài trời</h3><p class="muted mb-0">Sân nướng BBQ giữa vườn — tối se lạnh cả nhóm quây quần bên bếp than hồng.</p>
+                    <h3 class="h5 fw-bold" th:text="#{about.fac1.t}">BBQ ngoài trời</h3><p class="muted mb-0" th:text="#{about.fac1.d}">Sân nướng BBQ giữa vườn — tối se lạnh cả nhóm quây quần bên bếp than hồng.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4 reveal">
                 <div class="feature tilt"><span class="glow"></span>
                     <div class="feature-icon"><i class="bi bi-cloud-sun"></i></div>
-                    <h3 class="h5 fw-bold">Ban công ngắm mây</h3><p class="muted mb-0">Phòng có ban công nhìn ra thung lũng, sáng sớm mở cửa là thấy biển mây.</p>
+                    <h3 class="h5 fw-bold" th:text="#{about.fac2.t}">Ban công ngắm mây</h3><p class="muted mb-0" th:text="#{about.fac2.d}">Phòng có ban công nhìn ra thung lũng, sáng sớm mở cửa là thấy biển mây.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4 reveal">
                 <div class="feature tilt"><span class="glow"></span>
                     <div class="feature-icon"><i class="bi bi-stars"></i></div>
-                    <h3 class="h5 fw-bold">Đốt lửa trại</h3><p class="muted mb-0">Sân lửa trại cho nhóm bạn, gia đình — hát hò dưới bầu trời sao Tam Đảo.</p>
+                    <h3 class="h5 fw-bold" th:text="#{about.fac3.t}">Đốt lửa trại</h3><p class="muted mb-0" th:text="#{about.fac3.d}">Sân lửa trại cho nhóm bạn, gia đình — hát hò dưới bầu trời sao Tam Đảo.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4 reveal">
                 <div class="feature tilt"><span class="glow"></span>
                     <div class="feature-icon"><i class="bi bi-cup-hot"></i></div>
-                    <h3 class="h5 fw-bold">Bếp chung</h3><p class="muted mb-0">Bếp đầy đủ dụng cụ để tự nấu bữa ấm cúng, hoặc gọi combo lẩu, đồ nướng.</p>
+                    <h3 class="h5 fw-bold" th:text="#{about.fac4.t}">Bếp chung</h3><p class="muted mb-0" th:text="#{about.fac4.d}">Bếp đầy đủ dụng cụ để tự nấu bữa ấm cúng, hoặc gọi combo lẩu, đồ nướng.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4 reveal">
                 <div class="feature tilt"><span class="glow"></span>
                     <div class="feature-icon"><i class="bi bi-scooter"></i></div>
-                    <h3 class="h5 fw-bold">Thuê xe máy</h3><p class="muted mb-0">Cho thuê xe máy ngay tại homestay để tự do khám phá Thác Bạc, lâu đài, đền Bà Chúa.</p>
+                    <h3 class="h5 fw-bold" th:text="#{about.fac5.t}">Thuê xe máy</h3><p class="muted mb-0" th:text="#{about.fac5.d}">Cho thuê xe máy ngay tại homestay để tự do khám phá Thác Bạc, lâu đài, đền Bà Chúa.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4 reveal">
                 <div class="feature tilt"><span class="glow"></span>
                     <div class="feature-icon"><i class="bi bi-wifi"></i></div>
-                    <h3 class="h5 fw-bold">Wi-Fi & đỗ xe miễn phí</h3><p class="muted mb-0">Wi-Fi tốc độ cao khắp homestay, chỗ đỗ ô tô và xe máy miễn phí cho khách lưu trú.</p>
+                    <h3 class="h5 fw-bold" th:text="#{about.fac6.t}">Wi-Fi & đỗ xe miễn phí</h3><p class="muted mb-0" th:text="#{about.fac6.d}">Wi-Fi tốc độ cao khắp homestay, chỗ đỗ ô tô và xe máy miễn phí cho khách lưu trú.</p>
                 </div>
             </div>
         </div>
@@ -331,51 +331,51 @@
 <section class="block" id="kham-pha">
     <div class="container">
         <div class="text-center mb-5 reveal">
-            <div class="eyebrow mb-2">Quanh Homestay Mây</div>
-            <h2 class="section-title">Khám phá <span class="gradient-text">Tam Đảo</span></h2>
-            <p class="muted fs-5 mt-3 mb-0">Thị trấn trong mây quanh năm mát lạnh — từ homestay, bạn dễ dàng ghé thăm mọi điểm đến nổi tiếng.</p>
+            <div class="eyebrow mb-2" th:text="#{about.explore.eyebrow}">Quanh Homestay Mây</div>
+            <h2 class="section-title" th:utext="#{about.explore.title}">Khám phá <span class="gradient-text">Tam Đảo</span></h2>
+            <p class="muted fs-5 mt-3 mb-0" th:text="#{about.explore.lead}">Thị trấn trong mây quanh năm mát lạnh — từ homestay, bạn dễ dàng ghé thăm mọi điểm đến nổi tiếng.</p>
         </div>
         <div class="row g-4">
             <div class="col-md-6 col-lg-4 reveal">
                 <div class="spot">
-                    <div class="ph"><img src="/page-images/tamdao-thi-tran.jpg" alt="Thị trấn Tam Đảo" loading="lazy"><span class="tag">Thị trấn</span></div>
-                    <h3>Thị trấn Tam Đảo</h3>
-                    <p class="muted small">Thị trấn nhỏ bám sườn núi ở độ cao gần 900 m, nơi Homestay Mây đón bạn mỗi sáng mây vờn.</p>
+                    <div class="ph"><img src="/page-images/tamdao-thi-tran.jpg" th:alt="#{about.spot1.t}" loading="lazy"><span class="tag" th:text="#{about.spot1.tag}">Thị trấn</span></div>
+                    <h3 th:text="#{about.spot1.t}">Thị trấn Tam Đảo</h3>
+                    <p class="muted small" th:text="#{about.spot1.d}">Thị trấn nhỏ bám sườn núi ở độ cao gần 900 m, nơi Homestay Mây đón bạn mỗi sáng mây vờn.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4 reveal">
                 <div class="spot">
-                    <div class="ph"><img src="/page-images/tamdao-lau-dai.jpg" alt="Lâu đài Tam Đảo" loading="lazy"><span class="tag">Check-in</span></div>
-                    <h3>Lâu đài Tam Đảo</h3>
-                    <p class="muted small">Toà lâu đài phong cách châu Âu nổi bật giữa rừng thông, góc check-in quen thuộc của du khách.</p>
+                    <div class="ph"><img src="/page-images/tamdao-lau-dai.jpg" th:alt="#{about.spot2.t}" loading="lazy"><span class="tag" th:text="#{about.spot2.tag}">Check-in</span></div>
+                    <h3 th:text="#{about.spot2.t}">Lâu đài Tam Đảo</h3>
+                    <p class="muted small" th:text="#{about.spot2.d}">Toà lâu đài phong cách châu Âu nổi bật giữa rừng thông, góc check-in quen thuộc của du khách.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4 reveal">
                 <div class="spot">
-                    <div class="ph"><img src="/page-images/tamdao-thac-bac.jpg" alt="Thác Bạc" loading="lazy"><span class="tag">Thiên nhiên</span></div>
-                    <h3>Thác Bạc</h3>
-                    <p class="muted small">Dòng thác trắng xoá đổ từ vách đá giữa rừng già, mát lạnh cả những ngày hè.</p>
+                    <div class="ph"><img src="/page-images/tamdao-thac-bac.jpg" th:alt="#{about.spot3.t}" loading="lazy"><span class="tag" th:text="#{about.spot3.tag}">Thiên nhiên</span></div>
+                    <h3 th:text="#{about.spot3.t}">Thác Bạc</h3>
+                    <p class="muted small" th:text="#{about.spot3.d}">Dòng thác trắng xoá đổ từ vách đá giữa rừng già, mát lạnh cả những ngày hè.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4 reveal">
                 <div class="spot">
-                    <div class="ph"><img src="/page-images/tamdao-den-ba-chua.jpg" alt="Đền Bà Chúa Thượng Ngàn" loading="lazy"><span class="tag">Tâm linh</span></div>
-                    <h3>Đền Bà Chúa Thượng Ngàn</h3>
-                    <p class="muted small">Ngôi đền cổ trên đỉnh Thiên Thị, điểm đến linh thiêng của người dân và du khách.</p>
+                    <div class="ph"><img src="/page-images/tamdao-den-ba-chua.jpg" th:alt="#{about.spot4.t}" loading="lazy"><span class="tag" th:text="#{about.spot4.tag}">Tâm linh</span></div>
+                    <h3 th:text="#{about.spot4.t}">Đền Bà Chúa Thượng Ngàn</h3>
+                    <p class="muted small" th:text="#{about.spot4.d}">Ngôi đền cổ trên đỉnh Thiên Thị, điểm đến linh thiêng của người dân và du khách.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4 reveal">
                 <div class="spot">
-                    <div class="ph"><img src="/page-images/tamdao-ba-dinh.jpg" alt="Ba đỉnh Tam Đảo" loading="lazy"><span class="tag">Núi rừng</span></div>
-                    <h3>Ba đỉnh Tam Đảo</h3>
-                    <p class="muted small">Thạch Bàn, Thiên Thị, Phù Nghĩa — ba ngọn núi làm nên cái tên Tam Đảo nhấp nhô trong mây.</p>
+                    <div class="ph"><img src="/page-images/tamdao-ba-dinh.jpg" th:alt="#{about.spot5.t}" loading="lazy"><span class="tag" th:text="#{about.spot5.tag}">Núi rừng</span></div>
+                    <h3 th:text="#{about.spot5.t}">Ba đỉnh Tam Đảo</h3>
+                    <p class="muted small" th:text="#{about.spot5.d}">Thạch Bàn, Thiên Thị, Phù Nghĩa — ba ngọn núi làm nên cái tên Tam Đảo nhấp nhô trong mây.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4 reveal">
                 <div class="spot">
-                    <div class="ph"><img src="/page-images/tamdao-suong-su-su.jpg" alt="Vườn su su trong sương" loading="lazy"><span class="tag">Đặc sản</span></div>
-                    <h3>Vườn su su trong sương</h3>
-                    <p class="muted small">Những giàn su su xanh mướt phủ sương, đặc sản nhất định phải thử khi lên Tam Đảo.</p>
+                    <div class="ph"><img src="/page-images/tamdao-suong-su-su.jpg" th:alt="#{about.spot6.t}" loading="lazy"><span class="tag" th:text="#{about.spot6.tag}">Đặc sản</span></div>
+                    <h3 th:text="#{about.spot6.t}">Vườn su su trong sương</h3>
+                    <p class="muted small" th:text="#{about.spot6.d}">Những giàn su su xanh mướt phủ sương, đặc sản nhất định phải thử khi lên Tam Đảo.</p>
                 </div>
             </div>
         </div>
@@ -387,10 +387,10 @@
     <div class="container">
         <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-5 reveal">
             <div>
-                <div class="eyebrow mb-2">Hạng phòng</div>
-                <h2 class="section-title mb-0">Chọn không gian <span class="gradient-text">của riêng bạn</span></h2>
+                <div class="eyebrow mb-2" th:text="#{about.types.eyebrow}">Hạng phòng</div>
+                <h2 class="section-title mb-0" th:utext="#{about.types.title}">Chọn không gian <span class="gradient-text">của riêng bạn</span></h2>
             </div>
-            <a th:href="@{/rooms}" class="btn btn-ghost">Xem tất cả phòng <i class="bi bi-arrow-right ms-1"></i></a>
+            <a th:href="@{/rooms}" class="btn btn-ghost"><span th:text="#{about.types.all}">Xem tất cả phòng</span> <i class="bi bi-arrow-right ms-1"></i></a>
         </div>
         <div class="row g-4">
             <div class="col-md-6 col-lg-4 reveal zoom" th:each="rt, st : ${roomTypes}" th:if="${st.index < 6}">
@@ -400,12 +400,12 @@
                     </div>
                     <div class="price"><span th:text="${#numbers.formatDecimal(rt.basePrice, 1, 'POINT', 0, 'COMMA')}">0</span> đ</div>
                     <div class="p-4">
-                        <h3 class="h4 fw-bold mb-2" th:text="${rt.name}">Loại phòng</h3>
-                        <p class="muted small mb-3" th:text="${rt.description != null and !#strings.isEmpty(rt.description) ? #strings.abbreviate(rt.description, 110) : 'Không gian nghỉ ngơi thoải mái, đầy đủ tiện nghi.'}">Mô tả</p>
+                        <h3 class="h4 fw-bold mb-2" th:text="${rt.localizedName}">Loại phòng</h3>
+                        <p class="muted small mb-3" th:text="${rt.localizedDescription != null and !#strings.isEmpty(rt.localizedDescription)} ? ${#strings.abbreviate(rt.localizedDescription, 110)} : #{about.types.defaultDesc}">Mô tả</p>
                         <div class="d-flex flex-wrap gap-2">
-                            <span class="chip" th:if="${rt.maxGuests != null}"><i class="bi bi-people"></i><span th:text="${rt.maxGuests} + ' khách'">2 khách</span></span>
+                            <span class="chip" th:if="${rt.maxGuests != null}"><i class="bi bi-people"></i><span th:text="#{common.guests(${rt.maxGuests})}">2 khách</span></span>
                             <span class="chip" th:if="${rt.area != null}"><i class="bi bi-arrows-fullscreen"></i><span th:text="${#numbers.formatDecimal(rt.area, 1, 0)} + ' m²'">30 m²</span></span>
-                            <span class="chip"><i class="bi bi-moon-stars"></i>/ đêm</span>
+                            <span class="chip"><i class="bi bi-moon-stars"></i><span th:text="#{common.perNight}">/ đêm</span></span>
                         </div>
                     </div>
                 </div>
@@ -418,16 +418,16 @@
 <section class="block pt-0">
     <div class="container">
         <div class="text-center mb-5 reveal">
-            <div class="eyebrow mb-2">Thư viện ảnh</div>
-            <h2 class="section-title">Khoảnh khắc tại <span class="gradient-text">Mây</span></h2>
+            <div class="eyebrow mb-2" th:text="#{about.gallery.eyebrow}">Thư viện ảnh</div>
+            <h2 class="section-title" th:utext="#{about.gallery.title}">Khoảnh khắc tại <span class="gradient-text">Mây</span></h2>
         </div>
         <div class="gallery">
-            <div class="g-item reveal" data-caption="Tam Đảo nhìn từ trên cao"><img src="/page-images/tamdao-toan-canh.jpg" alt="Thị trấn Tam Đảo nhìn từ trên cao" loading="lazy"></div>
-            <div class="g-item reveal" data-caption="Phòng Pro Max"><img src="/page-images/phongProMax.jpg" alt="Phòng Pro Max" loading="lazy"></div>
-            <div class="g-item reveal" data-caption="Combo đồ nướng"><img src="/page-images/donuong.jpg" alt="Combo đồ nướng" loading="lazy"></div>
-            <div class="g-item reveal" data-caption="Phòng giường đôi"><img src="/page-images/anhphonggiuongdoi.jpg" alt="Phòng giường đôi" loading="lazy"></div>
-            <div class="g-item reveal" data-caption="Phòng tắm sang trọng"><img src="/page-images/wcpromax.jpg" alt="Phòng tắm sang trọng" loading="lazy"></div>
-            <div class="g-item reveal" data-caption="Thung lũng mây"><img src="/page-images/tamdao-thung-lung.jpg" alt="Thung lũng mây Tam Đảo" loading="lazy"></div>
+            <div class="g-item reveal" th:attr="data-caption=#{about.g1}"><img src="/page-images/tamdao-toan-canh.jpg" th:alt="#{about.g1}" loading="lazy"></div>
+            <div class="g-item reveal" th:attr="data-caption=#{about.g2}"><img src="/page-images/phongProMax.jpg" th:alt="#{about.g2}" loading="lazy"></div>
+            <div class="g-item reveal" th:attr="data-caption=#{about.g3}"><img src="/page-images/donuong.jpg" th:alt="#{about.g3}" loading="lazy"></div>
+            <div class="g-item reveal" th:attr="data-caption=#{about.g4}"><img src="/page-images/anhphonggiuongdoi.jpg" th:alt="#{about.g4}" loading="lazy"></div>
+            <div class="g-item reveal" th:attr="data-caption=#{about.g5}"><img src="/page-images/wcpromax.jpg" th:alt="#{about.g5}" loading="lazy"></div>
+            <div class="g-item reveal" th:attr="data-caption=#{about.g6}"><img src="/page-images/tamdao-thung-lung.jpg" th:alt="#{about.g6}" loading="lazy"></div>
         </div>
     </div>
 </section>
@@ -435,8 +435,8 @@
 <!-- ================= DANH GIA ================= -->
 <section class="block pt-0">
     <div class="container text-center mb-5 reveal">
-        <div class="eyebrow mb-2">Khách hàng nói gì</div>
-        <h2 class="section-title">Những lời <span class="gradient-text">yêu thương</span></h2>
+        <div class="eyebrow mb-2" th:text="#{about.reviews.eyebrow}">Khách hàng nói gì</div>
+        <h2 class="section-title" th:utext="#{about.reviews.title}">Những lời <span class="gradient-text">yêu thương</span></h2>
     </div>
     <div class="marquee">
         <div class="marquee-track" id="marqueeTrack">
@@ -453,11 +453,11 @@
             </div>
             <!-- Chua co danh gia that thi hien nhan xet mau -->
             <th:block th:if="${#lists.isEmpty(reviews)}">
-            <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#ec4899,#8b5cf6)">L</div><div class="text-start"><div class="fw-semibold">Lan Anh</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div></div></div><p class="muted mb-0 text-start">“Phòng sạch, view đẹp, nhân viên cực kỳ thân thiện. Nhất định sẽ quay lại!”</p></div>
-            <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#3b82f6,#22d3ee)">M</div><div class="text-start"><div class="fw-semibold">Minh Đức</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div></div></div><p class="muted mb-0 text-start">“Đặt phòng online rất nhanh, có email xác nhận ngay. Combo lẩu ngon xuất sắc.”</p></div>
-            <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">H</div><div class="text-start"><div class="fw-semibold">Thu Hà</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i></div></div></div><p class="muted mb-0 text-start">“Tối nướng BBQ, đốt lửa trại giữa trời se lạnh — cả nhà mình mê luôn.”</p></div>
-            <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#10b981,#06b6d4)">T</div><div class="text-start"><div class="fw-semibold">Quốc Tuấn</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div></div></div><p class="muted mb-0 text-start">“Sáng dậy mở cửa sổ là thấy mây trôi ngang phòng, check-in nhanh, giá hợp lý.”</p></div>
-            <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#8b5cf6,#3b82f6)">N</div><div class="text-start"><div class="fw-semibold">Bảo Ngọc</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div></div></div><p class="muted mb-0 text-start">“Phòng VIP xứng đáng từng đồng. Giường êm, phòng tắm cực xịn.”</p></div>
+            <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#ec4899,#8b5cf6)">L</div><div class="text-start"><div class="fw-semibold">Lan Anh</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div></div></div><p class="muted mb-0 text-start" th:text="|“#{about.review1}”|">“Phòng sạch, view đẹp, nhân viên cực kỳ thân thiện. Nhất định sẽ quay lại!”</p></div>
+            <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#3b82f6,#22d3ee)">M</div><div class="text-start"><div class="fw-semibold">Minh Đức</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div></div></div><p class="muted mb-0 text-start" th:text="|“#{about.review2}”|">“Đặt phòng online rất nhanh, có email xác nhận ngay. Combo lẩu ngon xuất sắc.”</p></div>
+            <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">H</div><div class="text-start"><div class="fw-semibold">Thu Hà</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i></div></div></div><p class="muted mb-0 text-start" th:text="|“#{about.review3}”|">“Tối nướng BBQ, đốt lửa trại giữa trời se lạnh — cả nhà mình mê luôn.”</p></div>
+            <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#10b981,#06b6d4)">T</div><div class="text-start"><div class="fw-semibold">Quốc Tuấn</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div></div></div><p class="muted mb-0 text-start" th:text="|“#{about.review4}”|">“Sáng dậy mở cửa sổ là thấy mây trôi ngang phòng, check-in nhanh, giá hợp lý.”</p></div>
+            <div class="review"><div class="d-flex align-items-center gap-3 mb-3"><div class="avatar" style="background:linear-gradient(135deg,#8b5cf6,#3b82f6)">N</div><div class="text-start"><div class="fw-semibold">Bảo Ngọc</div><div class="stars small"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div></div></div><p class="muted mb-0 text-start" th:text="|“#{about.review5}”|">“Phòng VIP xứng đáng từng đồng. Giường êm, phòng tắm cực xịn.”</p></div>
             </th:block>
         </div>
     </div>
@@ -469,19 +469,19 @@
         <div class="contact-card reveal zoom">
             <div class="row g-0">
                 <div class="col-lg-5 p-4 p-md-5">
-                    <div class="eyebrow mb-2">Liên hệ</div>
-                    <h2 class="section-title h1 mb-4">Ghé thăm <span class="gradient-text">chúng tôi</span></h2>
-                    <div class="contact-line"><div class="ic"><i class="bi bi-geo-alt"></i></div><div><div class="small muted">Địa chỉ</div><div class="fw-semibold">Dốc Tam Đảo, thị trấn Tam Đảo, Vĩnh Phúc</div></div></div>
+                    <div class="eyebrow mb-2" th:text="#{about.contact.eyebrow}">Liên hệ</div>
+                    <h2 class="section-title h1 mb-4" th:utext="#{about.contact.title}">Ghé thăm <span class="gradient-text">chúng tôi</span></h2>
+                    <div class="contact-line"><div class="ic"><i class="bi bi-geo-alt"></i></div><div><div class="small muted" th:text="#{about.contact.address}">Địa chỉ</div><div class="fw-semibold" th:text="#{about.contact.addressValue}">Dốc Tam Đảo, thị trấn Tam Đảo, Vĩnh Phúc</div></div></div>
                     <div class="contact-line"><div class="ic"><i class="bi bi-telephone"></i></div><div><div class="small muted">Hotline</div><a href="tel:0338932368" class="fw-semibold text-white">0338 932 368</a></div></div>
                     <div class="contact-line"><div class="ic"><i class="bi bi-chat-dots"></i></div><div><div class="small muted">Zalo</div><a href="https://zalo.me/0337196258" target="_blank" rel="noopener" class="fw-semibold text-white">0337 196 258</a></div></div>
                     <div class="contact-line"><div class="ic"><i class="bi bi-envelope"></i></div><div><div class="small muted">Email</div><a href="mailto:mayhomestaytd@gmail.com" class="fw-semibold text-white">mayhomestaytd@gmail.com</a></div></div>
-                    <div class="contact-line border-0"><div class="ic"><i class="bi bi-clock"></i></div><div><div class="small muted">Nhận / trả phòng</div><div class="fw-semibold">Nhận từ 14:00 · Trả trước 12:00</div></div></div>
+                    <div class="contact-line border-0"><div class="ic"><i class="bi bi-clock"></i></div><div><div class="small muted" th:text="#{about.contact.hours}">Nhận / trả phòng</div><div class="fw-semibold" th:text="#{about.contact.hoursValue}">Nhận từ 14:00 · Trả trước 12:00</div></div></div>
                     <!-- Khong truyen origin -> Google Maps tu lay vi tri hien tai cua nguoi dung lam diem xuat phat -->
                     <a href="https://www.google.com/maps/dir/?api=1&destination=21.454468,105.6393101"
-                       target="_blank" rel="noopener" class="btn btn-glow mt-4"><i class="bi bi-sign-turn-right me-2"></i>Chỉ đường</a>
+                       target="_blank" rel="noopener" class="btn btn-glow mt-4"><i class="bi bi-sign-turn-right me-2"></i><span th:text="#{about.contact.directions}">Chỉ đường</span></a>
                 </div>
                 <div class="col-lg-7">
-                    <iframe class="map" loading="lazy" title="Bản đồ Homestay Mây"
+                    <iframe class="map" loading="lazy" th:title="#{about.contact.map}"
                             src="https://maps.google.com/maps?q=21.454468,105.6393101&z=16&output=embed"></iframe>
                 </div>
             </div>
@@ -494,23 +494,23 @@
     <div class="container">
         <div class="cta reveal zoom">
             <div class="position-relative">
-                <h2 class="display-5 fw-bold mb-3">Sẵn sàng cho kỳ nghỉ tiếp theo?</h2>
-                <p class="fs-5 mb-4 opacity-75">Đặt phòng ngay hôm nay để nhận ưu đãi dành cho khách mới.</p>
-                <a th:href="@{/rooms}" class="btn btn-light btn-lg rounded-pill px-5 fw-bold"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Đặt phòng ngay</a>
+                <h2 class="display-5 fw-bold mb-3" th:text="#{about.final.title}">Sẵn sàng cho kỳ nghỉ tiếp theo?</h2>
+                <p class="fs-5 mb-4 opacity-75" th:text="#{about.final.text}">Đặt phòng ngay hôm nay để nhận ưu đãi dành cho khách mới.</p>
+                <a th:href="@{/rooms}" class="btn btn-light btn-lg rounded-pill px-5 fw-bold"><i class="bi bi-lightning-charge-fill text-warning me-2"></i><span th:text="#{about.cta.book}">Đặt phòng ngay</span></a>
             </div>
         </div>
     </div>
 </section>
 
 <!-- Ghi nguon anh Tam Dao lay tu Wikimedia Commons (giay phep CC yeu cau ghi ten tac gia) -->
-<div class="container"><p class="photo-credit muted text-center mb-0">Ảnh Tam Đảo từ Wikimedia Commons: <a href="https://commons.wikimedia.org/wiki/File:Phong_cảnh_Tam_Đảo.jpg" target="_blank" rel="noopener">Phong cảnh Tam Đảo</a> (Bùi Thụy Đào Nguyên, CC BY-SA 3.0) · <a href="https://commons.wikimedia.org/wiki/File:Thị_trấn_Tam_Đảo_-_NKS.jpg" target="_blank" rel="noopener">Thị trấn Tam Đảo</a> (NKSTTSSHNVN, CC BY-SA 4.0) · <a href="https://commons.wikimedia.org/wiki/File:Lâu_đài_Tam_Đảo_-_NKS.jpg" target="_blank" rel="noopener">Lâu đài Tam Đảo</a> (NKSTTSSHNVN, CC BY-SA 4.0) · <a href="https://commons.wikimedia.org/wiki/File:Tam_Đảo_TT.jpg" target="_blank" rel="noopener">Tam Đảo</a> (NKSTTSSHNVN, CC BY-SA 4.0) · <a href="https://commons.wikimedia.org/wiki/File:Thac_bac-tam_dao.jpg" target="_blank" rel="noopener">Thác Bạc</a> (Nhcuong81, CC BY 3.0) · <a href="https://commons.wikimedia.org/wiki/File:Đền_Bà_Chúa_Thượng_Ngàn_Tam_Đảo.jpg" target="_blank" rel="noopener">Đền Bà Chúa Thượng Ngàn</a> (Bùi Thụy Đào Nguyên, CC BY-SA 3.0) · <a href="https://commons.wikimedia.org/wiki/File:Vườn_su_su_ở_Tam_Đảo.jpg" target="_blank" rel="noopener">Vườn su su</a> (Bùi Thụy Đào Nguyên, CC BY-SA 3.0) · <a href="https://commons.wikimedia.org/wiki/File:Tam_Dao_National_Park_2.jpg" target="_blank" rel="noopener">Toàn cảnh Tam Đảo</a> (Letrungdungcz, CC BY-SA 4.0) · <a href="https://commons.wikimedia.org/wiki/File:Tam_Dao_mountain_range.jpg" target="_blank" rel="noopener">Dãy núi Tam Đảo</a> (Viethavvh, Public domain).</p></div>
+<div class="container"><p class="photo-credit muted text-center mb-0"><span th:text="#{about.credit}">Ảnh Tam Đảo từ Wikimedia Commons:</span> <a href="https://commons.wikimedia.org/wiki/File:Phong_cảnh_Tam_Đảo.jpg" target="_blank" rel="noopener">Phong cảnh Tam Đảo</a> (Bùi Thụy Đào Nguyên, CC BY-SA 3.0) · <a href="https://commons.wikimedia.org/wiki/File:Thị_trấn_Tam_Đảo_-_NKS.jpg" target="_blank" rel="noopener">Thị trấn Tam Đảo</a> (NKSTTSSHNVN, CC BY-SA 4.0) · <a href="https://commons.wikimedia.org/wiki/File:Lâu_đài_Tam_Đảo_-_NKS.jpg" target="_blank" rel="noopener">Lâu đài Tam Đảo</a> (NKSTTSSHNVN, CC BY-SA 4.0) · <a href="https://commons.wikimedia.org/wiki/File:Tam_Đảo_TT.jpg" target="_blank" rel="noopener">Tam Đảo</a> (NKSTTSSHNVN, CC BY-SA 4.0) · <a href="https://commons.wikimedia.org/wiki/File:Thac_bac-tam_dao.jpg" target="_blank" rel="noopener">Thác Bạc</a> (Nhcuong81, CC BY 3.0) · <a href="https://commons.wikimedia.org/wiki/File:Đền_Bà_Chúa_Thượng_Ngàn_Tam_Đảo.jpg" target="_blank" rel="noopener">Đền Bà Chúa Thượng Ngàn</a> (Bùi Thụy Đào Nguyên, CC BY-SA 3.0) · <a href="https://commons.wikimedia.org/wiki/File:Vườn_su_su_ở_Tam_Đảo.jpg" target="_blank" rel="noopener">Vườn su su</a> (Bùi Thụy Đào Nguyên, CC BY-SA 3.0) · <a href="https://commons.wikimedia.org/wiki/File:Tam_Dao_National_Park_2.jpg" target="_blank" rel="noopener">Toàn cảnh Tam Đảo</a> (Letrungdungcz, CC BY-SA 4.0) · <a href="https://commons.wikimedia.org/wiki/File:Tam_Dao_mountain_range.jpg" target="_blank" rel="noopener">Dãy núi Tam Đảo</a> (Viethavvh, Public domain).</p></div>
 
-<div class="lightbox" id="lightbox"><button class="close" aria-label="Đóng">&times;</button><img alt=""></div>
+<div class="lightbox" id="lightbox"><button class="close" th:aria-label="#{common.close}">&times;</button><img alt=""></div>
 
 <div th:replace="~{fragments/chatbot-widget :: widget}"></div>
 <div th:replace="~{fragments/footer :: footer}"></div>
 
-<script>
+<script th:inline="javascript">
 (function () {
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -543,7 +543,9 @@
     document.querySelectorAll('.counter').forEach(function (el) { cio.observe(el); });
 
     // Chu chay o hero
-    var words = ['kỳ nghỉ trọn vẹn', 'giấc ngủ êm ái', 'bữa tối lãng mạn', 'chuyến công tác tiện lợi', 'khoảnh khắc đáng nhớ'];
+    // Moi gia tri inline de rieng 1 dong ket thuc bang '' - Thymeleaf nuot ca phan code dung sau gia tri mac dinh
+    var typingWords = /*[[#{about.hero.typing}]]*/ '';
+    var words = typingWords.split(';');
     var typing = document.getElementById('typing'), wi = 0, ci = words[0].length, deleting = true;
     function type() {
         var w = words[wi];

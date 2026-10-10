@@ -13,21 +13,21 @@ import java.time.LocalTime;
 @Setter
 public class BookingConfirmRequest {
 
-    @NotBlank(message = "Vui lòng nhập họ tên người nhận phòng")
+    @NotBlank(message = "{val.guestName.required}")
     private String guestName;
 
-    @NotBlank(message = "Vui lòng nhập email")
-    @Email(message = "Email không hợp lệ")
+    @NotBlank(message = "{val.email.enter}")
+    @Email(message = "{val.email.invalid}")
     private String guestEmail;
 
-    @NotBlank(message = "Vui lòng nhập số điện thoại")
-    @Pattern(regexp = "^0[0-9]{9}$", message = "Số điện thoại phải có 10 số và bắt đầu bằng 0")
+    @NotBlank(message = "{val.phone.enter}")
+    @Pattern(regexp = "^0[0-9]{9}$", message = "{val.phone.pattern}")
     private String guestPhone;
 
-    @NotNull(message = "Vui lòng chọn giờ nhận phòng")
+    @NotNull(message = "{val.checkInTime.required}")
     private LocalTime checkInTime;
 
-    @NotNull(message = "Vui lòng chọn giờ trả phòng")
+    @NotNull(message = "{val.checkOutTime.required}")
     private LocalTime checkOutTime;
 
     // Khong bat buoc - de trong neu khach khong dung ma giam gia

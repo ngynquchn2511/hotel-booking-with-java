@@ -47,7 +47,7 @@ public class RoomService {
 
     public Room findById(Long id) {
         return roomRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy phòng"));
+                .orElseThrow(() -> BusinessException.of("err.roomNotFound"));
     }
 
     public List<RoomImage> findImages(Long roomId) {
@@ -58,13 +58,13 @@ public class RoomService {
     // Bo sung: khong cho phep dat phong voi ngay nhan phong trong qua khu
     public List<Room> searchAvailableRooms(LocalDate checkIn, LocalDate checkOut, Integer guests, Long roomTypeId) {
         if (checkIn == null || checkOut == null) {
-            throw new BusinessException("Vui lòng chọn đầy đủ ngày nhận phòng và ngày trả phòng");
+            throw BusinessException.of("err.datesRequired");
         }
         if (checkIn.isBefore(LocalDate.now())) {
-            throw new BusinessException("Ngày nhận phòng không được ở trong quá khứ");
+            throw BusinessException.of("err.checkInPast");
         }
         if (!checkOut.isAfter(checkIn)) {
-            throw new BusinessException("Ngày trả phòng phải lớn hơn ngày nhận phòng");
+            throw BusinessException.of("err.checkOutAfterCheckIn");
         }
         return roomRepository.findAvailableRooms(checkIn, checkOut, roomTypeId, guests);
     }
@@ -128,6 +128,7 @@ public class RoomService {
                 .roomType(roomType)
                 .price(request.getPrice())
                 .description(request.getDescription())
+                .descriptionEn(blankToNull(request.getDescriptionEn()))
                 .status(RoomStatus.AVAILABLE)
                 .build();
 
@@ -154,6 +155,7 @@ public class RoomService {
         room.setRoomType(roomType);
         room.setPrice(request.getPrice());
         room.setDescription(request.getDescription());
+        room.setDescriptionEn(blankToNull(request.getDescriptionEn()));
         room = roomRepository.save(room);
 
         List<MultipartFile> validFiles = filterValidFiles(imageFiles);
@@ -258,5 +260,10 @@ public class RoomService {
                     .build();
             roomImageRepository.save(image);
         }
+    }
+
+    // O ban tieng Anh de trong -> luu null (trang khach tu dung ban tieng Viet)
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

@@ -9,6 +9,7 @@ import com.hotel.service.BookingService;
 import com.hotel.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.hotel.service.UserMessages;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -22,8 +23,10 @@ public class CustomerAccountController {
 
     private final UserService userService;
     private final BookingService bookingService;
+    private final UserMessages userMessages;
 
-    public CustomerAccountController(UserService userService, BookingService bookingService) {
+    public CustomerAccountController(UserService userService, BookingService bookingService, UserMessages userMessages) {
+        this.userMessages = userMessages;
         this.userService = userService;
         this.bookingService = bookingService;
     }
@@ -58,9 +61,9 @@ public class CustomerAccountController {
             // Dong bo lai thong tin trong phien dang nhap hien tai
             userDetails.getUser().setFullName(updated.getFullName());
             userDetails.getUser().setPhoneNumber(updated.getPhoneNumber());
-            redirectAttributes.addFlashAttribute("profileSuccess", "Đã cập nhật thông tin cá nhân");
+            redirectAttributes.addFlashAttribute("profileSuccess", userMessages.get("msg.profileSaved"));
         } catch (BusinessException ex) {
-            redirectAttributes.addFlashAttribute("profileError", ex.getMessage());
+            redirectAttributes.addFlashAttribute("profileError", userMessages.of(ex));
             redirectAttributes.addFlashAttribute("profileRequest", request);
         }
         return "redirect:/customer/account";
@@ -79,9 +82,9 @@ public class CustomerAccountController {
         try {
             User updated = userService.changePassword(userDetails.getUser().getId(), request);
             userDetails.getUser().setPassword(updated.getPassword());
-            redirectAttributes.addFlashAttribute("passwordSuccess", "Đã đổi mật khẩu thành công");
+            redirectAttributes.addFlashAttribute("passwordSuccess", userMessages.get("msg.passwordChanged"));
         } catch (BusinessException ex) {
-            redirectAttributes.addFlashAttribute("passwordError", ex.getMessage());
+            redirectAttributes.addFlashAttribute("passwordError", userMessages.of(ex));
         }
         return "redirect:/customer/account#doi-mat-khau";
     }

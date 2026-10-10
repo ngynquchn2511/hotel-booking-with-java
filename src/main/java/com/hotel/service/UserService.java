@@ -35,12 +35,12 @@ public class UserService {
     public User registerCustomer(RegisterRequest request) {
         // Business rule: email không được trùng
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessException("Email này đã được đăng ký, vui lòng dùng email khác");
+            throw BusinessException.of("err.emailTaken");
         }
 
         // Business rule: mật khẩu xác nhận phải giống mật khẩu
         if (!request.getPassword().equals(request.getConfirmPassword())) {
-            throw new BusinessException("Mật khẩu xác nhận không khớp");
+            throw BusinessException.of("err.passwordMismatch");
         }
 
         User user = User.builder()
@@ -79,10 +79,10 @@ public class UserService {
     @Transactional
     public void resetPassword(String token, String newPassword, String confirmPassword) {
         User user = findValidResetUser(token).orElseThrow(() ->
-                new BusinessException("Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn"));
+                BusinessException.of("err.resetLinkInvalid"));
 
         if (!newPassword.equals(confirmPassword)) {
-            throw new BusinessException("Mật khẩu xác nhận không khớp");
+            throw BusinessException.of("err.passwordMismatch");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -94,7 +94,7 @@ public class UserService {
 
     public User findById(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy tài khoản"));
+                .orElseThrow(() -> BusinessException.of("err.accountNotFound"));
     }
 
     // Khach tu sua ho ten / so dien thoai. So dien thoai dung de tim khach khi dat phong tai quay nen khong duoc trung
@@ -105,7 +105,7 @@ public class UserService {
         userRepository.findByPhoneNumber(phone)
                 .filter(other -> !other.getId().equals(userId))
                 .ifPresent(other -> {
-                    throw new BusinessException("Số điện thoại này đã được dùng cho tài khoản khác");
+                    throw BusinessException.of("err.phoneTaken");
                 });
         user.setFullName(request.getFullName().trim());
         user.setPhoneNumber(phone);
@@ -117,13 +117,13 @@ public class UserService {
     public User changePassword(Long userId, ChangePasswordRequest request) {
         User user = findById(userId);
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new BusinessException("Mật khẩu hiện tại không đúng");
+            throw BusinessException.of("err.wrongPassword");
         }
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new BusinessException("Mật khẩu xác nhận không khớp");
+            throw BusinessException.of("err.passwordMismatch");
         }
         if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
-            throw new BusinessException("Mật khẩu mới phải khác mật khẩu hiện tại");
+            throw BusinessException.of("err.samePassword");
         }
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         return userRepository.save(user);

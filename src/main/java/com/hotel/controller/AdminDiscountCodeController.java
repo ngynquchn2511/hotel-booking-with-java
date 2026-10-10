@@ -69,6 +69,7 @@ public class AdminDiscountCodeController {
         DiscountCodeRequest request = new DiscountCodeRequest();
         request.setCode(discountCode.getCode());
         request.setDescription(discountCode.getDescription());
+        request.setDescriptionEn(discountCode.getDescriptionEn());
         request.setDiscountType(discountCode.getDiscountType());
         request.setDiscountValue(discountCode.getDiscountValue());
         request.setApplicableCustomerType(discountCode.getApplicableCustomerType());

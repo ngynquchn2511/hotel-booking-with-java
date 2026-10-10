@@ -11,21 +11,21 @@ import lombok.Setter;
 @Setter
 public class RegisterRequest {
 
-    @NotBlank(message = "Họ tên không được để trống")
+    @NotBlank(message = "{val.fullName.required}")
     private String fullName;
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không hợp lệ")
+    @NotBlank(message = "{val.email.required}")
+    @Email(message = "{val.email.invalid}")
     private String email;
 
-    @NotBlank(message = "Số điện thoại không được để trống")
-    @Pattern(regexp = "^0[0-9]{9}$", message = "Số điện thoại phải có 10 số và bắt đầu bằng 0")
+    @NotBlank(message = "{val.phone.required}")
+    @Pattern(regexp = "^0[0-9]{9}$", message = "{val.phone.pattern}")
     private String phoneNumber;
 
-    @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
+    @NotBlank(message = "{val.password.required}")
+    @Size(min = 6, message = "{val.password.min}")
     private String password;
 
-    @NotBlank(message = "Vui lòng xác nhận mật khẩu")
+    @NotBlank(message = "{val.password.confirm}")
     private String confirmPassword;
 }

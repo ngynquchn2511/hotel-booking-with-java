@@ -1,5 +1,6 @@
 package com.hotel.entity;
 
+import com.hotel.util.Texts;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +27,14 @@ public class SpecialRate {
 
     @Column(nullable = false, length = 100)
     private String name;
+
+    // Ten dip le tieng Anh (tuy chon) hien o trang xac nhan dat phong khi khach chon EN
+    @Column(name = "name_en", length = 100)
+    private String nameEn;
+
+    public String getLocalizedName() {
+        return Texts.pick(name, nameEn);
+    }
 
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;

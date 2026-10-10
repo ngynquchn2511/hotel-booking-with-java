@@ -11,11 +11,11 @@ import lombok.Setter;
 @Setter
 public class ProfileUpdateRequest {
 
-    @NotBlank(message = "Họ tên không được để trống")
-    @Size(max = 150, message = "Họ tên tối đa 150 ký tự")
+    @NotBlank(message = "{val.fullName.required}")
+    @Size(max = 150, message = "{val.fullName.max}")
     private String fullName;
 
-    @NotBlank(message = "Số điện thoại không được để trống")
-    @Pattern(regexp = "^0[0-9]{9}$", message = "Số điện thoại phải có 10 số và bắt đầu bằng 0")
+    @NotBlank(message = "{val.phone.required}")
+    @Pattern(regexp = "^0[0-9]{9}$", message = "{val.phone.pattern}")
     private String phoneNumber;
 }

@@ -32,8 +32,20 @@
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label">Tên combo <span class="badge bg-info text-dark">EN</span> <span class="text-muted small">(không bắt buộc — bỏ trống thì khách chọn tiếng Anh vẫn thấy bản tiếng Việt)</span></label>
+                        <input type="text" th:field="*{nameEn}" class="form-control" maxlength="150" placeholder="VD: BBQ combo">
+                        <div class="text-danger small" th:if="${#fields.hasErrors('nameEn')}" th:errors="*{nameEn}"></div>
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label">Mô tả combo</label>
                         <textarea th:field="*{description}" class="form-control" rows="3" placeholder="Mô tả món ăn, số lượng, ghi chú..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Mô tả combo <span class="badge bg-info text-dark">EN</span> <span class="text-muted small">(không bắt buộc — bỏ trống thì khách chọn tiếng Anh vẫn thấy bản tiếng Việt)</span></label>
+                        <textarea th:field="*{descriptionEn}" class="form-control" rows="3" maxlength="1000"></textarea>
+                        <div class="text-danger small" th:if="${#fields.hasErrors('descriptionEn')}" th:errors="*{descriptionEn}"></div>
                     </div>
 
                     <div class="mb-3">

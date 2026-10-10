@@ -3,7 +3,7 @@
         <div class="row gy-3 align-items-center">
             <div class="col-md-4">
                 <span class="fw-bold text-white fs-5">Homestay Mây</span>
-                <p class="small mb-0 mt-1">Đặt phòng homestay giữa mây ngàn Tam Đảo nhanh chóng, tiện lợi.</p>
+                <p class="small mb-0 mt-1" th:text="#{footer.tagline}">Đặt phòng homestay giữa mây ngàn Tam Đảo nhanh chóng, tiện lợi.</p>
             </div>
             <div class="col-md-4 text-md-center">
                 <!-- Nhan vien/admin: lien ket o lai khu quan tri, khong day sang giao dien khach hang -->
@@ -20,16 +20,16 @@
                 </ul>
                 <ul class="list-inline mb-0 small" sec:authorize="!hasAnyRole('ADMIN','STAFF')">
                     <li class="list-inline-item mx-2">
-                        <a th:href="@{/}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none">Trang chủ</a>
+                        <a th:href="@{/}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none" th:text="#{nav.home}">Trang chủ</a>
                     </li>
                     <li class="list-inline-item mx-2">
-                        <a th:href="@{/about}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none">Giới thiệu</a>
+                        <a th:href="@{/about}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none" th:text="#{nav.about}">Giới thiệu</a>
                     </li>
                     <li class="list-inline-item mx-2">
-                        <a th:href="@{/rooms}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none">Danh sách phòng</a>
+                        <a th:href="@{/rooms}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none" th:text="#{nav.rooms}">Danh sách phòng</a>
                     </li>
                     <li class="list-inline-item mx-2" sec:authorize="hasRole('CUSTOMER')">
-                        <a th:href="@{/customer/bookings}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none">Lịch sử đặt phòng</a>
+                        <a th:href="@{/customer/bookings}" class="link-light link-opacity-75 link-opacity-100-hover text-decoration-none" th:text="#{nav.history}">Lịch sử đặt phòng</a>
                     </li>
                 </ul>
             </div>

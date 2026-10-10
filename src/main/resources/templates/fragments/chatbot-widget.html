@@ -197,9 +197,9 @@
     <th:block th:with="zaloPhone=${@environment.getProperty('app.contact.zalo-phone')}">
     <a th:if="${zaloPhone != null and !#strings.isEmpty(zaloPhone)}"
        th:href="'https://zalo.me/' + ${zaloPhone}" id="zaloButton" target="_blank" rel="noopener"
-       aria-label="Nhắn tin Zalo cho Homestay Mây" title="Nhắn Zalo cho homestay">
+       th:aria-label="#{chat.w.zaloAria}" th:title="#{chat.w.zaloTitle}">
         <span class="zalo-mark">Zalo</span>
-        <span class="zalo-label">Nhắn Zalo</span>
+        <span class="zalo-label" th:text="#{chat.w.zaloLabel}">Nhắn Zalo</span>
     </a>
     </th:block>
 
@@ -222,40 +222,72 @@
         </svg>
 
         <div id="mayPeek" role="button" tabindex="0">
-            <button type="button" id="mayPeekClose" aria-label="Ẩn lời chào">&times;</button>
-            Chào bạn 👋 Mình là <b>Mây</b>! Cần tư vấn phòng ở Tam Đảo thì hỏi Mây nha ☁️
+            <button type="button" id="mayPeekClose" th:aria-label="#{chat.w.peekClose}">&times;</button>
+            <span th:utext="#{chat.w.peek}">Chào bạn 👋 Mình là <b>Mây</b>! Cần tư vấn phòng ở Tam Đảo thì hỏi Mây nha ☁️</span>
         </div>
 
-        <button type="button" id="chatbotBubble" aria-label="Mở khung chat với trợ lý Mây">
+        <button type="button" id="chatbotBubble" th:aria-label="#{chat.w.open}">
             <svg class="may-avatar" aria-hidden="true"><use href="#mayCloud"/></svg>
             <span class="may-online"></span>
-            <span class="may-bubble-label">Hỏi Mây</span>
+            <span class="may-bubble-label" th:text="#{chat.w.ask}">Hỏi Mây</span>
         </button>
 
-        <div id="chatbotPanel" role="dialog" aria-label="Trò chuyện với trợ lý Mây">
+        <div id="chatbotPanel" role="dialog" th:aria-label="#{chat.w.panel}">
             <div class="may-header">
                 <svg class="may-avatar" aria-hidden="true"><use href="#mayCloud"/></svg>
                 <div>
                     <div class="may-title">Mây ☁️</div>
-                    <div class="may-status">Đang online · trả lời ngay</div>
+                    <div class="may-status" th:text="#{chat.w.status}">Đang online · trả lời ngay</div>
                 </div>
-                <button type="button" class="may-header-btn" id="chatbotReset" title="Bắt đầu lại" aria-label="Bắt đầu cuộc trò chuyện mới">
+                <button type="button" class="may-header-btn" id="chatbotReset" th:title="#{chat.w.reset}" th:aria-label="#{chat.w.resetAria}">
                     <i class="bi bi-arrow-counterclockwise"></i></button>
-                <button type="button" class="may-header-btn" id="chatbotClose" title="Đóng" aria-label="Đóng khung chat">
+                <button type="button" class="may-header-btn" id="chatbotClose" th:title="#{chat.w.close}" th:aria-label="#{chat.w.closeAria}">
                     <i class="bi bi-x-lg"></i></button>
             </div>
             <div id="chatbotMessages" aria-live="polite"></div>
             <form id="chatbotForm" autocomplete="off">
-                <input type="text" id="chatbotInput" placeholder="Nhắn cho Mây..." maxlength="300" aria-label="Nội dung tin nhắn">
-                <button type="submit" id="chatbotSend" aria-label="Gửi"><i class="bi bi-send-fill"></i></button>
+                <input type="text" id="chatbotInput" th:placeholder="#{chat.w.placeholder}" maxlength="300" th:aria-label="#{chat.w.inputAria}">
+                <button type="submit" id="chatbotSend" th:aria-label="#{chat.w.send}"><i class="bi bi-send-fill"></i></button>
             </form>
-            <div class="may-footnote">Mây trả lời tự động từ dữ liệu của homestay · cần người thật, nhắn Zalo nha</div>
+            <div class="may-footnote" th:text="#{chat.w.footnote}">Mây trả lời tự động từ dữ liệu của homestay · cần người thật, nhắn Zalo nha</div>
         </div>
     </div>
 
-    <script>
+    <script th:inline="javascript">
         (function () {
-            var STORE_KEY = 'mayChat.v1';
+            // Chu song ngu cho widget - moi gia tri inline 1 dong rieng ket thuc bang ''
+            // (Thymeleaf nuot phan code viet tiep sau gia tri mac dinh)
+            var LANG = /*[[${#locale.language == 'en' ? 'en' : 'vi'}]]*/ '';
+            var T_MORNING = /*[[#{chat.w.morning}]]*/ '';
+            var T_NOON = /*[[#{chat.w.noon}]]*/ '';
+            var T_AFTERNOON = /*[[#{chat.w.afternoon}]]*/ '';
+            var T_EVENING = /*[[#{chat.w.evening}]]*/ '';
+            var T_GREET1 = /*[[#{chat.w.greet1}]]*/ '';
+            var T_GREET2 = /*[[#{chat.w.greet2}]]*/ '';
+            var T_TYPING = /*[[#{chat.w.typing}]]*/ '';
+            var T_ERROR = /*[[#{chat.w.error}]]*/ '';
+            var TP_PRICE = /*[[#{chat.t.price}]]*/ '';
+            var SG_PRICE = /*[[#{chat.sg.price}]]*/ '';
+            var TP_AVAILABLE = /*[[#{chat.t.available}]]*/ '';
+            var SG_AVAILABLE = /*[[#{chat.sg.available}]]*/ '';
+            var TP_DEPOSIT = /*[[#{chat.t.deposit}]]*/ '';
+            var SG_DEPOSIT = /*[[#{chat.sg.deposit}]]*/ '';
+            var TP_COMBO = /*[[#{chat.t.combo}]]*/ '';
+            var SG_COMBO = /*[[#{chat.sg.combo}]]*/ '';
+            var TP_EXPLORE = /*[[#{chat.t.explore}]]*/ '';
+            var SG_EXPLORE = /*[[#{chat.sg.explore}]]*/ '';
+            var TP_DIRECTIONS = /*[[#{chat.t.directions}]]*/ '';
+            var SG_DIRECTIONS = /*[[#{chat.sg.directions}]]*/ '';
+            var TOPICS = [
+                ['💸', TP_PRICE, SG_PRICE],
+                ['📅', TP_AVAILABLE, SG_AVAILABLE],
+                ['🔒', TP_DEPOSIT, SG_DEPOSIT],
+                ['🍲', TP_COMBO, SG_COMBO],
+                ['🗺️', TP_EXPLORE, SG_EXPLORE],
+                ['🧭', TP_DIRECTIONS, SG_DIRECTIONS]
+            ];
+            // Lich su luu rieng theo ngon ngu: doi VI/EN thi bat dau hoi thoai moi bang ngon ngu do
+            var STORE_KEY = 'mayChat.v1.' + LANG;
             var PEEK_KEY = 'mayChat.peekShown';
             var bubble = document.getElementById('chatbotBubble');
             var panel = document.getElementById('chatbotPanel');
@@ -270,14 +302,7 @@
             var csrfHeader = document.getElementById('chatbotCsrfHeader').value;
             var busy = false;
 
-            var TOPICS = [
-                ['💸', 'Giá phòng', 'Giá phòng thế nào'],
-                ['📅', 'Phòng trống', 'Còn phòng trống không'],
-                ['🔒', 'Đặt cọc', 'Có cần đặt cọc không'],
-                ['🍲', 'Combo ăn uống', 'Có combo ăn uống không'],
-                ['🗺️', 'Đi chơi đâu', 'Gần đây có chỗ nào đi chơi'],
-                ['🧭', 'Đường đi', 'Đường lên Tam Đảo đi thế nào']
-            ];
+            
 
             // Lich su hoi thoai giu trong phien (chuyen trang van con) - loi luu tru thi bo qua
             var history = [];
@@ -415,11 +440,10 @@
 
             function greet() {
                 var hour = new Date().getHours();
-                var hello = hour < 11 ? 'Chào buổi sáng' : hour < 14 ? 'Chào buổi trưa' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
+                var hello = hour < 11 ? T_MORNING : hour < 14 ? T_NOON : hour < 18 ? T_AFTERNOON : T_EVENING;
                 var m = {
                     from: 'bot', time: Date.now(),
-                    text: hello + ' bạn nha! 🌤️ Mình là **Mây** — trợ lý nhỏ của Homestay Mây trên Dốc Tam Đảo.\n'
-                        + 'Bạn muốn Mây giúp gì nè? Chọn nhanh một chủ đề bên dưới hoặc gõ câu hỏi nha 👇'
+                    text: T_GREET1.replace('{0}', hello) + '\n' + T_GREET2
                 };
                 history.push(m);
                 save();
@@ -445,7 +469,7 @@
                 row.id = 'mayTyping';
                 var b = document.createElement('div');
                 b.className = 'may-msg may-typing';
-                b.setAttribute('aria-label', 'Mây đang gõ');
+                b.setAttribute('aria-label', T_TYPING);
                 for (var i = 0; i < 3; i++) b.appendChild(document.createElement('i'));
                 row.appendChild(avatar());
                 row.appendChild(b);
@@ -483,7 +507,7 @@
                 fetch('/api/chatbot/ask', { method: 'POST', headers: headers, body: JSON.stringify({ message: text }) })
                     .then(function (res) { if (!res.ok) throw new Error(res.status); return res.json(); })
                     .catch(function () {
-                        return { reply: 'Ui, mạng hơi chập chờn nên Mây chưa nghe rõ 🥺 Bạn thử gửi lại hoặc nhắn Zalo cho Mây nha!', actions: [], suggestions: [] };
+                        return { reply: T_ERROR, actions: [], suggestions: [] };
                     })
                     .then(function (data) {
                         // Giu "dang go" mot chut cho tu nhien

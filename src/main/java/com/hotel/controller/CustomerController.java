@@ -7,6 +7,7 @@ import com.hotel.service.ComboService;
 import com.hotel.service.PricingService;
 import com.hotel.service.ReviewService;
 import com.hotel.service.RoomService;
+import com.hotel.service.UserMessages;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,10 +27,12 @@ public class CustomerController {
     private final ReviewService reviewService;
     private final BookingService bookingService;
     private final PricingService pricingService;
+    private final UserMessages userMessages;
 
     public CustomerController(RoomService roomService, RoomTypeRepository roomTypeRepository,
                                ComboService comboService, ReviewService reviewService,
-                               BookingService bookingService, PricingService pricingService) {
+                               BookingService bookingService, PricingService pricingService, UserMessages userMessages) {
+        this.userMessages = userMessages;
         this.roomService = roomService;
         this.roomTypeRepository = roomTypeRepository;
         this.comboService = comboService;
@@ -62,7 +65,7 @@ public class CustomerController {
                 List<com.hotel.entity.Room> rooms = roomService.searchAvailableRooms(checkIn, checkOut, guests, roomTypeId);
                 model.addAttribute("rooms", rooms);
             } catch (BusinessException ex) {
-                model.addAttribute("errorMessage", ex.getMessage());
+                model.addAttribute("errorMessage", userMessages.of(ex));
             }
         }
 
@@ -101,10 +104,10 @@ public class CustomerController {
         if (checkIn != null && checkOut != null) {
             try {
                 if (checkIn.isBefore(LocalDate.now())) {
-                    throw new BusinessException("Ngày nhận phòng không được ở trong quá khứ");
+                    throw BusinessException.of("err.checkInPast");
                 }
                 if (!checkOut.isAfter(checkIn)) {
-                    throw new BusinessException("Ngày trả phòng phải lớn hơn ngày nhận phòng");
+                    throw BusinessException.of("err.checkOutAfterCheckIn");
                 }
                 long nights = ChronoUnit.DAYS.between(checkIn, checkOut);
                 // Tinh theo tung dem (cuoi tuan / ngay le co phu thu) - khop voi so tien luc dat
@@ -123,7 +126,7 @@ public class CustomerController {
                 BookingService.Availability availability = bookingService.checkAvailability(room, checkIn, checkOut);
                 boolean available = availability.isAvailable();
                 model.addAttribute("availability", availability);
-                model.addAttribute("availabilityMessage", availability.describe());
+                model.addAttribute("availabilityMessage", availability.describe(userMessages::get));
                 if (!available && availability.freeFrom() != null && !availability.maintenance()) {
                     // Goi y dat lai tu ngay phong trong, giu nguyen so dem
                     LocalDate suggestIn = availability.freeFrom().toLocalDate();
@@ -137,7 +140,7 @@ public class CustomerController {
                 model.addAttribute("totalAmount", totalAmount);
                 model.addAttribute("available", available);
             } catch (BusinessException ex) {
-                model.addAttribute("errorMessage", ex.getMessage());
+                model.addAttribute("errorMessage", userMessages.of(ex));
             }
         }
 

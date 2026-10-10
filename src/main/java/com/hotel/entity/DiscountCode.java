@@ -1,5 +1,6 @@
 package com.hotel.entity;
 
+import com.hotel.util.Texts;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,6 +28,14 @@ public class DiscountCode {
 
     @Column(length = 500)
     private String description;
+
+    // Mo ta tieng Anh (tuy chon) - chatbot tra loi tieng Anh dung ban nay, bo trong thi dung ban tieng Viet
+    @Column(name = "description_en", length = 500)
+    private String descriptionEn;
+
+    public String getLocalizedDescription() {
+        return Texts.pick(description, descriptionEn);
+    }
 
     @Enumerated(EnumType.STRING)
     @Column(name = "discount_type", nullable = false, length = 20)
