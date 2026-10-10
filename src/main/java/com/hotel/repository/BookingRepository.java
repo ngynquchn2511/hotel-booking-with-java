@@ -27,6 +27,16 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // Moi khach chi duoc dung 1 ma giam gia 1 lan - don da huy (CANCELLED) thi khong tinh, khach dung lai duoc
     boolean existsByCustomerIdAndDiscountCodeIdAndStatusNot(Long customerId, Long discountCodeId, BookingStatus status);
 
+    // Lich phong (timeline): moi don chua huy co luu tru giao voi khoang [from, to) - fetch san phong + khach de tranh N+1
+    @Query("""
+            SELECT b FROM Booking b JOIN FETCH b.room JOIN FETCH b.customer
+            WHERE b.status <> com.hotel.entity.BookingStatus.CANCELLED
+            AND b.checkInDate < :to
+            AND b.checkOutDate > :from
+            ORDER BY b.checkInDate
+            """)
+    List<Booking> findForCalendar(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
     // BR-01: kiem tra phong da co booking trung khoang ngay chua (dung khi tao booking moi)
     // Cong thuc trung lich: existing.checkIn < newCheckOut AND existing.checkOut > newCheckIn
     @Query("""

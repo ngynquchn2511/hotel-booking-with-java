@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 @ControllerAdvice(assignableTypes = {
         AdminController.class,
         AdminBookingController.class,
+        AdminRoomCalendarController.class,
         AdminWalkInBookingController.class,
         AdminComboController.class,
         AdminCustomerController.class,

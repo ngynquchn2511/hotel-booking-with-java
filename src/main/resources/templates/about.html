@@ -393,7 +393,7 @@
             <a th:href="@{/rooms}" class="btn btn-ghost">Xem tất cả phòng <i class="bi bi-arrow-right ms-1"></i></a>
         </div>
         <div class="row g-4">
-            <div class="col-md-6 col-lg-4 reveal zoom" th:each="rt, st : ${roomTypes}">
+            <div class="col-md-6 col-lg-4 reveal zoom" th:each="rt, st : ${roomTypes}" th:if="${st.index < 6}">
                 <div class="room-card">
                     <div class="overflow-hidden">
                         <div class="thumb" th:style="'background-image:url(/page-images/' + ${ {'anhphonggiuongdoi.jpg','anhphongVIP.jpg','phongProMax.jpg','phongpromax2.jpg','anhphonggiuongdoi2.jpg','danhsachphong.jpg'}[st.index % 6] } + ')'"></div>
@@ -427,7 +427,6 @@
             <div class="g-item reveal" data-caption="Combo đồ nướng"><img src="/page-images/donuong.jpg" alt="Combo đồ nướng" loading="lazy"></div>
             <div class="g-item reveal" data-caption="Phòng giường đôi"><img src="/page-images/anhphonggiuongdoi.jpg" alt="Phòng giường đôi" loading="lazy"></div>
             <div class="g-item reveal" data-caption="Phòng tắm sang trọng"><img src="/page-images/wcpromax.jpg" alt="Phòng tắm sang trọng" loading="lazy"></div>
-            <div class="g-item reveal" data-caption="Phòng VIP"><img src="/page-images/anhphongVIP.jpg" alt="Phòng VIP" loading="lazy"></div>
             <div class="g-item reveal" data-caption="Thung lũng mây"><img src="/page-images/tamdao-thung-lung.jpg" alt="Thung lũng mây Tam Đảo" loading="lazy"></div>
         </div>
     </div>
