@@ -8,7 +8,10 @@ import com.hotel.repository.BookingRepository;
 import com.hotel.repository.ComboRepository;
 import com.hotel.repository.DiscountCodeRepository;
 import com.hotel.repository.RoomRepository;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -164,8 +167,20 @@ public class BookingService {
         }
     }
 
+    // Chong dat trung khi nhieu nguoi thao tac cung luc: khoa dong phong den het giao dich.
+    // Ket hop READ_COMMITTED o cac ham goi -> sau khi cho khoa, cau kiem tra trung lich doc duoc don nguoi truoc vua luu
+    // (MySQL mac dinh REPEATABLE READ se doc "anh chup" cu va bo sot don do)
+    private java.util.Optional<Room> lockRoom(Long roomId) {
+        try {
+            return roomRepository.findByIdForUpdate(roomId);
+        } catch (PessimisticLockingFailureException | QueryTimeoutException ex) {
+            throw new BusinessException("Phòng này đang có người khác đặt cùng lúc. Vui lòng thử lại sau vài giây");
+        }
+    }
+
     // Chan xac nhan don neu phong da co don KHAC da xac nhan / dang o trung ngay (tranh trung phong that)
     private void ensureNoConfirmedConflict(Booking booking) {
+        lockRoom(booking.getRoom().getId());
         checkAvailability(booking.getRoom(), booking.getCheckInDate(), booking.getCheckOutDate(), booking.getId())
                 .conflicts().stream()
                 .filter(b -> b.getStatus() != BookingStatus.PENDING)
@@ -191,7 +206,7 @@ public class BookingService {
     }
 
     // Khach dat online: don cho xac nhan, neu homestay bat dat coc thi kem so tien + han chuyen coc
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Booking createBooking(User customer, Long roomId, LocalDate checkInDate, LocalDate checkOutDate,
                                   LocalTime checkInTime, LocalTime checkOutTime, Integer guests,
                                   Long comboId, String discountCodeStr, String guestName, String guestPhone,
@@ -250,7 +265,7 @@ public class BookingService {
             throw new BusinessException("Ngày nhận phòng không được ở trong quá khứ");
         }
 
-        Room room = roomRepository.findById(roomId)
+        Room room = lockRoom(roomId)
                 .orElseThrow(() -> new BusinessException("Không tìm thấy phòng"));
 
         // BR-03
@@ -482,7 +497,7 @@ public class BookingService {
     }
 
     // Nhan vien xac nhan booking: PENDING -> CONFIRMED
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Booking confirmBooking(Long bookingId) {
         Booking booking = findById(bookingId);
         if (booking.getStatus() != BookingStatus.PENDING) {
@@ -496,7 +511,7 @@ public class BookingService {
     }
 
     // Nhan vien thay tien coc da vao tai khoan -> ghi nhan da coc va xac nhan don luon
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Booking confirmDeposit(Long bookingId) {
         Booking booking = findById(bookingId);
         if (!booking.isDepositRequired()) {
@@ -559,7 +574,7 @@ public class BookingService {
 
     // Dat phong truc tiep tai quay cho khach vang lai (khong can dang ky tai khoan truoc),
     // nhan vien xac nhan luon (CONFIRMED) vi da lam viec truc tiep voi khach
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Booking createWalkInBooking(User customer, Long roomId, LocalDate checkInDate, LocalDate checkOutDate,
                                         LocalTime checkInTime, LocalTime checkOutTime, Integer guests,
                                         Long comboId, String guestName, String guestPhone, String guestEmail) {

@@ -123,7 +123,7 @@ class BookingServiceTest {
     @Test
     void createBooking_roomUnderMaintenance_throws() {
         room.setStatus(RoomStatus.MAINTENANCE);
-        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         BusinessException ex = assertThrows(BusinessException.class, () -> bookingService.createBooking(
                 customer, 10L, LocalDate.now().plusDays(1), LocalDate.now().plusDays(2),
                 LocalTime.of(14, 0), LocalTime.of(12, 0), 2, null, null,
@@ -133,7 +133,7 @@ class BookingServiceTest {
 
     @Test
     void createBooking_overlappingDates_throws() {
-        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         LocalDate in = LocalDate.now().plusDays(1);
         LocalDate out = LocalDate.now().plusDays(3);
         when(bookingRepository.existsOverlappingBooking(10L, in, out)).thenReturn(true);
@@ -144,7 +144,7 @@ class BookingServiceTest {
 
     @Test
     void createBooking_roomNotFound_throws() {
-        when(roomRepository.findById(99L)).thenReturn(Optional.empty());
+        when(roomRepository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
         assertThrows(BusinessException.class, () -> bookingService.createBooking(
                 customer, 99L, LocalDate.now().plusDays(1), LocalDate.now().plusDays(2),
                 LocalTime.of(14, 0), LocalTime.of(12, 0), 2, null, null,
@@ -157,7 +157,7 @@ class BookingServiceTest {
     void createBooking_success_defaultsStatusPendingAndNewBookingTrue() {
         LocalDate in = LocalDate.now().plusDays(1);
         LocalDate out = LocalDate.now().plusDays(3); // 2 dem
-        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         when(bookingRepository.existsOverlappingBooking(10L, in, out)).thenReturn(false);
         when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -176,7 +176,7 @@ class BookingServiceTest {
         LocalDate in = LocalDate.now().plusDays(1);
         LocalDate out = LocalDate.now().plusDays(2); // 1 dem
         Combo combo = Combo.builder().id(5L).name("Combo A").price(bd(150000)).active(true).build();
-        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         when(bookingRepository.existsOverlappingBooking(10L, in, out)).thenReturn(false);
         when(comboRepository.findById(5L)).thenReturn(Optional.of(combo));
         when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -195,7 +195,7 @@ class BookingServiceTest {
         LocalDate out = LocalDate.now().plusDays(2); // 1 dem = 300000
         DiscountCode code = DiscountCode.builder().id(1L).code("SALE10").discountType(DiscountType.PERCENTAGE)
                 .discountValue(bd(10)).applicableCustomerType(null).active(true).build();
-        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         when(bookingRepository.existsOverlappingBooking(10L, in, out)).thenReturn(false);
         when(discountCodeRepository.findByCodeAndActiveTrue("SALE10")).thenReturn(Optional.of(code));
         when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -214,7 +214,7 @@ class BookingServiceTest {
         LocalDate out = LocalDate.now().plusDays(2); // subtotal = 300000
         DiscountCode code = DiscountCode.builder().id(2L).code("FIX500K").discountType(DiscountType.FIXED_AMOUNT)
                 .discountValue(bd(500000)).applicableCustomerType(null).active(true).build();
-        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         when(bookingRepository.existsOverlappingBooking(10L, in, out)).thenReturn(false);
         when(discountCodeRepository.findByCodeAndActiveTrue("FIX500K")).thenReturn(Optional.of(code));
         when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -234,7 +234,7 @@ class BookingServiceTest {
         LocalDate out = LocalDate.now().plusDays(2);
         DiscountCode code = DiscountCode.builder().id(3L).code("VIPONLY").discountType(DiscountType.PERCENTAGE)
                 .discountValue(bd(20)).applicableCustomerType(CustomerType.VIP).active(true).build();
-        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         when(bookingRepository.existsOverlappingBooking(10L, in, out)).thenReturn(false);
         when(discountCodeRepository.findByCodeAndActiveTrue("VIPONLY")).thenReturn(Optional.of(code));
 
@@ -247,7 +247,7 @@ class BookingServiceTest {
     void createBooking_discountNotFoundOrInactive_throws() {
         LocalDate in = LocalDate.now().plusDays(1);
         LocalDate out = LocalDate.now().plusDays(2);
-        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         when(bookingRepository.existsOverlappingBooking(10L, in, out)).thenReturn(false);
         when(discountCodeRepository.findByCodeAndActiveTrue("NOPE")).thenReturn(Optional.empty());
 
@@ -260,7 +260,7 @@ class BookingServiceTest {
     void createBooking_defaultGuestsWhenNullOrNonPositive() {
         LocalDate in = LocalDate.now().plusDays(1);
         LocalDate out = LocalDate.now().plusDays(2);
-        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         when(bookingRepository.existsOverlappingBooking(10L, in, out)).thenReturn(false);
         when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -416,7 +416,7 @@ class BookingServiceTest {
     void createWalkInBooking_setsConfirmedAndNewBookingFalse() {
         LocalDate in = LocalDate.now().plusDays(1);
         LocalDate out = LocalDate.now().plusDays(2);
-        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         when(bookingRepository.existsOverlappingBooking(10L, in, out)).thenReturn(false);
         when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -432,7 +432,7 @@ class BookingServiceTest {
     void createWalkInBooking_stillRejectsOverlap() {
         LocalDate in = LocalDate.now().plusDays(1);
         LocalDate out = LocalDate.now().plusDays(2);
-        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         when(bookingRepository.existsOverlappingBooking(10L, in, out)).thenReturn(true);
 
         assertThrows(BusinessException.class, () -> bookingService.createWalkInBooking(customer, 10L, in, out,
@@ -645,7 +645,7 @@ class BookingServiceTest {
     void createBooking_depositEnabled_setsDepositAndDeadline() {
         LocalDate in = LocalDate.now().plusDays(10);
         LocalDate out = in.plusDays(1);
-        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         when(bookingRepository.existsOverlappingBooking(10L, in, out)).thenReturn(false);
         when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
         doReturn(bd(300000)).when(pricingService).roomAmount(room.getPrice(), in, out);
@@ -750,7 +750,7 @@ class BookingServiceTest {
     @Test
     void createBooking_checkInBeforePreviousGuestLeaves_rejectedWithTime() {
         LocalDate d = LocalDate.now().plusDays(10);
-        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         when(bookingRepository.existsOverlappingBooking(10L, d, d.plusDays(1))).thenReturn(false);
         when(bookingRepository.findByRoomIdAndStatusIn(eq(10L), anyList()))
                 .thenReturn(List.of(active(1L, d.minusDays(1), d, BookingStatus.CONFIRMED)));

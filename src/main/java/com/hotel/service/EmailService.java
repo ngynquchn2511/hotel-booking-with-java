@@ -6,6 +6,7 @@ import com.hotel.entity.BookingStatus;
 import com.hotel.entity.Payment;
 import com.hotel.entity.User;
 import jakarta.mail.internet.MimeMessage;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.util.HtmlUtils;
 
 import java.math.BigDecimal;
@@ -22,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Executor;
 
 @Service
 public class EmailService {
@@ -29,6 +33,7 @@ public class EmailService {
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
     private final JavaMailSender mailSender;
+    private final Executor mailExecutor;
     private final String senderEmail;
     private final String senderPassword;
 
@@ -47,15 +52,19 @@ public class EmailService {
     private String baseUrl;
 
     public EmailService(JavaMailSender mailSender,
+                        @Qualifier("mailExecutor") Executor mailExecutor,
                         @Value("${spring.mail.username:}") String senderEmail,
                         @Value("${spring.mail.password:}") String senderPassword) {
         this.mailSender = mailSender;
+        this.mailExecutor = mailExecutor;
         this.senderEmail = senderEmail;
         this.senderPassword = senderPassword;
     }
 
     // Gui email xac nhan sau khi dat phong thanh cong. Neu gui that bai (VD: chua cau hinh dung mat khau ung dung)
     // thi CHI ghi log canh bao, KHONG lam hong luong dat phong - dat phong van thanh cong binh thuong.
+    // Noi dung soan ngay (con trong giao dich, doc duoc phong/combo...), con viec gui thi doi giao dich commit xong
+    // moi chay o luong rieng (xem deliverAfterCommit)
     public void sendBookingConfirmation(Booking booking) {
         // Khi tra phong khach nhan email hoa don (sendInvoice) thay cho email thong bao trang thai
         if (booking.getStatus() == BookingStatus.CHECKED_OUT) {
@@ -70,17 +79,36 @@ public class EmailService {
             log.error("Khong gui email xac nhan cho booking #{}: chua dat MAIL_USERNAME va MAIL_PASSWORD", booking.getId());
             return;
         }
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom("Homestay Mây <" + senderEmail + ">");
-            message.setTo(booking.getGuestEmail());
-            message.setSubject("Xác nhận đặt phòng #" + booking.getId() + " - Homestay Mây");
-            message.setText(buildBody(booking));
-            message.setSubject(buildSubject(booking));
-            mailSender.send(message);
-            log.info("Da gui email xac nhan cho booking #{} toi {}", booking.getId(), booking.getGuestEmail());
-        } catch (Exception ex) {
-            log.error("Gui email xac nhan that bai cho booking #{} toi {}", booking.getId(), booking.getGuestEmail(), ex);
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("Homestay Mây <" + senderEmail + ">");
+        message.setTo(booking.getGuestEmail());
+        message.setSubject(buildSubject(booking));
+        message.setText(buildBody(booking));
+        Long bookingId = booking.getId();
+        String to = booking.getGuestEmail();
+        deliverAfterCommit(() -> {
+            try {
+                mailSender.send(message);
+                log.info("Da gui email xac nhan cho booking #{} toi {}", bookingId, to);
+            } catch (Exception ex) {
+                log.error("Gui email xac nhan that bai cho booking #{} toi {}", bookingId, to, ex);
+            }
+        });
+    }
+
+    // Dang trong giao dich: chi gui khi giao dich COMMIT thanh cong (rollback -> khong gui email cho don khong ton tai),
+    // va gui sau khi da nha khoa phong (SMTP cham khong bat khach khac dat cung phong phai cho).
+    // Khong co giao dich: gui luon (van o luong rieng)
+    private void deliverAfterCommit(Runnable send) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    mailExecutor.execute(send);
+                }
+            });
+        } else {
+            mailExecutor.execute(send);
         }
     }
 

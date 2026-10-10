@@ -82,7 +82,7 @@ class BookingServiceParamTest {
 
     private Room stubRoom(long price, RoomStatus status) {
         Room room = Room.builder().id(10L).roomNumber("101").roomType(roomType).price(bd(price)).status(status).build();
-        when(roomRepository.findById(10L)).thenReturn(Optional.of(room));
+        when(roomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         return room;
     }
 
